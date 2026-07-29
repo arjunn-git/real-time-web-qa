@@ -121,13 +121,22 @@ app.post('/api/validate-paste', async (req, res) => {
 
 import path from 'path';
 
-// Serve built frontend SPA static files in production
+// Serve built frontend SPA static files with anti-cache headers for index.html
 const distPath = path.join(process.cwd(), 'dist');
-app.use(express.static(distPath));
+app.use(express.static(distPath, {
+  setHeaders: (res, filepath) => {
+    if (filepath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Fallback SPA middleware for non-API requests (Express v5 compatible)
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.sendFile(path.join(distPath, 'index.html'), (err) => {
     if (err) next();
   });
