@@ -1,0 +1,153 @@
+import React, { useState } from 'react';
+import confetti from 'canvas-confetti';
+import { Navbar } from './components/Navbar';
+import { InputPanel } from './components/InputPanel';
+import { DeliveryStatusBanner } from './components/DeliveryStatusBanner';
+import { PageWiseReport } from './components/PageWiseReport';
+import { ChecklistSections } from './components/ChecklistSections';
+import { ExportToolbar } from './components/ExportToolbar';
+import type { DeliveryQaReport } from '../server/services/deliveryQaEngine';
+import './index.css';
+
+export const App: React.FC = () => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [pastedText, setPastedText] = useState<string>('');
+  const [isUsingPaste, setIsUsingPaste] = useState<boolean>(false);
+  const [websiteUrl, setWebsiteUrl] = useState<string>('');
+
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisStep, setAnalysisStep] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [qaReport, setQaReport] = useState<DeliveryQaReport | null>(null);
+  const [docMetaData, setDocMetaData] = useState<{ title: string } | null>(null);
+  const [webMetaData, setWebMetaData] = useState<{ title: string; url: string } | null>(null);
+
+  // Real-time backend API call using Document File Upload
+  const handleRunWebsiteQA = async () => {
+    if (!websiteUrl.trim()) {
+      setErrorMessage('Please provide a valid Website Preview URL.');
+      return;
+    }
+
+    setErrorMessage(null);
+    setIsAnalyzing(true);
+    setAnalysisStep('1. Reading & Parsing Document File...');
+
+    try {
+      let response: Response;
+
+      if (!isUsingPaste) {
+        if (!selectedFile) {
+          throw new Error('Please upload a document file (.docx, .doc, .pdf, .txt, .md).');
+        }
+        setAnalysisStep('2. Extracting Document Copy & Inspecting Website Pages...');
+        const formData = new FormData();
+        formData.append('documentFile', selectedFile);
+        formData.append('websiteUrl', websiteUrl.trim());
+
+        response = await fetch('/api/validate-upload', {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        if (!pastedText.trim()) {
+          throw new Error('Please paste your original website copy.');
+        }
+        setAnalysisStep('2. Parsing Pasted Copy & Inspecting Website Pages...');
+        response = await fetch('/api/validate-paste', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pastedContent: pastedText.trim(),
+            websiteUrl: websiteUrl.trim(),
+          }),
+        });
+      }
+
+      setAnalysisStep('3. Auditing Pages, Buttons, Links, SEO & Contact Info...');
+      const json = await response.json();
+
+      if (!response.ok || !json.success) {
+        throw new Error(json.error || 'Failed to perform website QA inspection.');
+      }
+
+      setQaReport(json.report);
+      setDocMetaData(json.document);
+      setWebMetaData(json.website);
+
+      if (json.report.websiteDeliveryStatus === 'READY FOR DELIVERY') {
+        confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      }
+    } catch (err: any) {
+      console.error('QA Inspection Error:', err);
+      setErrorMessage(err.message || 'An error occurred while inspecting the website.');
+      setQaReport(null);
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisStep('');
+    }
+  };
+
+  const handleReset = () => {
+    setSelectedFile(null);
+    setPastedText('');
+    setWebsiteUrl('');
+    setErrorMessage(null);
+    setQaReport(null);
+    setDocMetaData(null);
+    setWebMetaData(null);
+  };
+
+  return (
+    <div className="app-container">
+      <Navbar onReset={handleReset} />
+
+      <main className="main-content">
+        <InputPanel
+          selectedFile={selectedFile}
+          onSelectFile={setSelectedFile}
+          pastedText={pastedText}
+          onUpdatePastedText={setPastedText}
+          isUsingPaste={isUsingPaste}
+          onToggleUsePaste={setIsUsingPaste}
+          websiteUrl={websiteUrl}
+          onUpdateWebsiteUrl={setWebsiteUrl}
+          onRunValidation={handleRunWebsiteQA}
+          isAnalyzing={isAnalyzing}
+          analysisStep={analysisStep}
+          error={errorMessage}
+        />
+
+        {/* PRE-CLIENT DELIVERY QA REPORT DISPLAY */}
+        {qaReport && (
+          <div className="results-wrapper">
+            <ExportToolbar
+              report={qaReport}
+              documentTitle={docMetaData?.title || selectedFile?.name || 'Document File'}
+              websiteTitle={webMetaData?.title || websiteUrl}
+            />
+
+            <DeliveryStatusBanner
+              report={qaReport}
+              documentTitle={docMetaData?.title || selectedFile?.name || 'Document File'}
+              websiteTitle={webMetaData?.title || websiteUrl}
+            />
+
+            <PageWiseReport pages={qaReport.pageWiseReport} />
+
+            <ChecklistSections report={qaReport} />
+          </div>
+        )}
+      </main>
+
+      <footer className="app-footer">
+        <p>
+          Dynamic Website QA Validator &copy; {new Date().getFullYear()} — Powered by Document File Upload & Puppeteer Multi-Page Scraper
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
