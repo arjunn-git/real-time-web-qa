@@ -74,7 +74,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
   let browser = null;
 
   try {
-    browser = await puppeteer.launch({
+    const launchOptions: any = {
       headless: true,
       args: [
         '--no-sandbox',
@@ -83,7 +83,13 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
         '--disable-accelerated-2d-canvas',
         '--disable-gpu'
       ]
-    });
+    };
+
+    if (process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH;
+    }
+
+    browser = await puppeteer.launch(launchOptions);
 
     const mainPage = await browser.newPage();
     await mainPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');

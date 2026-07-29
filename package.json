@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npx puppeteer browsers install chrome && tsc -b && vite build",
     "start": "npx tsx server/index.ts",
+    "postinstall": "npx puppeteer browsers install chrome",
     "lint": "oxlint",
     "preview": "vite preview"
   },
