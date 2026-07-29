@@ -1,4 +1,38 @@
 import puppeteer from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
+
+function findLocalChromePath(): string | undefined {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH;
+  }
+
+  const projectCachePath = path.join(process.cwd(), '.cache', 'puppeteer', 'chrome');
+  if (fs.existsSync(projectCachePath)) {
+    try {
+      const versions = fs.readdirSync(projectCachePath);
+      for (const ver of versions) {
+        const linuxBin = path.join(projectCachePath, ver, 'chrome-linux64', 'chrome');
+        if (fs.existsSync(linuxBin)) return linuxBin;
+        const winBin = path.join(projectCachePath, ver, 'chrome-win64', 'chrome.exe');
+        if (fs.existsSync(winBin)) return winBin;
+      }
+    } catch (e) {}
+  }
+
+  const renderCachePath = '/opt/render/.cache/puppeteer/chrome';
+  if (fs.existsSync(renderCachePath)) {
+    try {
+      const versions = fs.readdirSync(renderCachePath);
+      for (const ver of versions) {
+        const linuxBin = path.join(renderCachePath, ver, 'chrome-linux64', 'chrome');
+        if (fs.existsSync(linuxBin)) return linuxBin;
+      }
+    } catch (e) {}
+  }
+
+  return undefined;
+}
 
 export interface ScrapedButtonData {
   text: string;
@@ -85,8 +119,9 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
       ]
     };
 
-    if (process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH) {
-      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH;
+    const detectedChrome = findLocalChromePath();
+    if (detectedChrome) {
+      launchOptions.executablePath = detectedChrome;
     }
 
     browser = await puppeteer.launch(launchOptions);
@@ -95,9 +130,20 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
     await mainPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
     await mainPage.setViewport({ width: 1366, height: 768 });
 
+    // Accelerate scraping speed by blocking heavy media assets
+    await mainPage.setRequestInterception(true);
+    mainPage.on('request', (req) => {
+      const type = req.resourceType();
+      if (['image', 'media', 'font'].includes(type)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
     const response = await mainPage.goto(cleanUrl, {
-      waitUntil: ['domcontentloaded', 'networkidle2'],
-      timeout: 30000
+      waitUntil: 'domcontentloaded',
+      timeout: 15000
     });
 
     if (!response) {
@@ -380,14 +426,25 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
     // Process inspected pages with unique name deduplication
     const processedPageNames = new Set<string>();
 
-    for (const urlItem of urlsToInspect) {
+    // Cap total pages to inspect to 4 pages max for super-fast cloud execution
+    const cappedUrlsToInspect = urlsToInspect.slice(0, 4);
+
+    for (const urlItem of cappedUrlsToInspect) {
       try {
         let inspectPage = mainPage;
         let isAccessible = true;
 
         if (urlItem !== cleanUrl) {
           inspectPage = await browser.newPage();
-          const pageRes = await inspectPage.goto(urlItem, { waitUntil: 'domcontentloaded', timeout: 15000 });
+          await inspectPage.setRequestInterception(true);
+          inspectPage.on('request', (req) => {
+            if (['image', 'media', 'font'].includes(req.resourceType())) {
+              req.abort();
+            } else {
+              req.continue();
+            }
+          });
+          const pageRes = await inspectPage.goto(urlItem, { waitUntil: 'domcontentloaded', timeout: 10000 });
           if (!pageRes || pageRes.status() >= 400) {
             isAccessible = false;
           }

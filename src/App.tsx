@@ -68,7 +68,16 @@ export const App: React.FC = () => {
       }
 
       setAnalysisStep('3. Auditing Pages, Buttons, Links, SEO & Contact Info...');
-      const json = await response.json();
+      const responseText = await response.text();
+      let json: any = {};
+      try {
+        json = JSON.parse(responseText);
+      } catch (e) {
+        if (!response.ok) {
+          throw new Error(`Server returned status ${response.status}. Please retry your check.`);
+        }
+        throw new Error('The server response was incomplete. Please try running the check again.');
+      }
 
       if (!response.ok || !json.success) {
         throw new Error(json.error || 'Failed to perform website QA inspection.');
