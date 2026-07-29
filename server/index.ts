@@ -125,7 +125,8 @@ import path from 'path';
 const distPath = path.join(process.cwd(), 'dist');
 app.use(express.static(distPath));
 
-app.get('*', (req, res, next) => {
+// Fallback SPA middleware for non-API requests (Express v5 compatible)
+app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(distPath, 'index.html'), (err) => {
     if (err) next();
