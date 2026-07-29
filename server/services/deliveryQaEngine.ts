@@ -244,14 +244,37 @@ export function runDeliveryQaEngine(
   }
 
   // Compare CTAs from document specifications against live website buttons
-  const docCtaMatches = docText.match(/(Book|Contact|Get|Request|Find|Schedule)\s+[A-Za-z0-9\s]{3,30}/gi);
+  const docCtaMatches = docText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order)\s+[A-Za-z0-9\s]{2,30}/gi);
   if (docCtaMatches && docCtaMatches.length > 0) {
-    const uniqueDocCtas: string[] = Array.from(new Set(docCtaMatches.map((c: string) => c.trim()))).slice(0, 3);
+    const uniqueDocCtas: string[] = Array.from(new Set(docCtaMatches.map((c: string) => c.trim()))).slice(0, 5);
     uniqueDocCtas.forEach((cta: string) => {
-      const matchingBtn = siteData.allButtons.find(b => b.text.toLowerCase().includes(cta.toLowerCase()) || cta.toLowerCase().includes(b.text.toLowerCase()));
+      const matchingBtn = siteData.allButtons.find(b => 
+        b.text.toLowerCase().includes(cta.toLowerCase()) || 
+        cta.toLowerCase().includes(b.text.toLowerCase())
+      );
       if (matchingBtn) {
         const comp = compareCtaOrCopy(cta, matchingBtn.text);
         contentDiscrepancyAdd(contentDiscrepancies, comp.status, `CTA Button ("${cta}")`, cta, matchingBtn.text, comp.notes);
+      } else {
+        contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', `CTA Button ("${cta}")`, cta, 'Not Found on Website', 'CTA button specified in document is missing on website');
+        missingContentCount++;
+      }
+    });
+  }
+
+  // Compare Headings from document specifications against live website H1/H2 tags
+  const docHeadings = docText.match(/^(#{1,4}|\[|\bHeading:\b)\s*(.+)$/gm);
+  if (docHeadings && docHeadings.length > 0) {
+    const uniqueHeadings = Array.from(new Set(docHeadings.map(h => h.replace(/^#{1,4}\s*|^\[|\]$|^\bHeading:\b\s*/gi, '').trim()))).filter(h => h.length > 3).slice(0, 5);
+    const allSiteH1s = siteData.pages.flatMap(p => p.h1).map(h => h.toLowerCase());
+    
+    uniqueHeadings.forEach(h => {
+      const siteHasHeading = allSiteH1s.some(sh => sh.includes(h.toLowerCase()) || h.toLowerCase().includes(sh));
+      if (siteHasHeading) {
+        contentDiscrepancyAdd(contentDiscrepancies, 'Matched Content', `Section Heading ("${h}")`, h, h, 'Heading matched in website pages');
+      } else {
+        contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', `Section Heading ("${h}")`, h, 'Not Found on Website', 'Section heading specified in document copy is missing on website');
+        missingContentCount++;
       }
     });
   }
