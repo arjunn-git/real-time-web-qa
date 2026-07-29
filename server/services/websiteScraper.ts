@@ -1,4 +1,6 @@
 import puppeteer from 'puppeteer';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 
@@ -639,9 +641,93 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
       }
     };
   } catch (error: any) {
+    console.warn('[Puppeteer Scraper Error - Falling back to Static HTTP Scraper]:', error.message);
     if (browser) {
       try { await browser.close(); } catch (e) {}
     }
-    throw error;
+    return scrapeWebsiteStaticFallback(targetUrl);
+  }
+}
+
+async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsiteScrapeResult> {
+  const cleanUrl = getCleanUrl(targetUrl);
+
+  try {
+    const res = await axios.get(cleanUrl, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    const $ = cheerio.load(res.data);
+    const siteTitle = $('title').text().trim() || cleanUrl;
+    const h1s = $('h1').map((_, el) => $(el).text().trim()).get().filter(Boolean);
+    const metaTitle = siteTitle;
+    const metaDescription = $('meta[name="description" i], meta[property="og:description" i]').attr('content') || '';
+
+    const buttonsData: ScrapedButtonData[] = [];
+    $('a, button, input[type="submit"], input[type="button"]').each((_, el) => {
+      const val = $(el).val();
+      const valStr = Array.isArray(val) ? val.join(' ') : (val || '');
+      const text = ($(el).text().trim() || valStr || $(el).attr('aria-label') || '').trim();
+      const href = $(el).attr('href') || '#';
+      if (text && text.length < 60 && !text.includes('?')) {
+        let actionType = 'Internal Page Link';
+        if (href.startsWith('mailto:')) actionType = 'Email Link';
+        else if (href.startsWith('tel:')) actionType = 'Phone Link';
+        else if (href.startsWith('#')) actionType = 'Opens Lead Form';
+        else if (href.startsWith('http')) actionType = 'External URL';
+        buttonsData.push({ text, href, actionType, isValid: true, statusLabel: `${actionType} (Valid)` });
+      }
+    });
+
+    const fullHtml = String(res.data);
+    const phoneMatch = fullHtml.match(/(\+?\d[0-9\s\-]{8,}\d)/);
+    const emailMatch = fullHtml.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+
+    const pagesData: PageScrapeData[] = [{
+      name: 'Homepage',
+      url: cleanUrl,
+      path: '/',
+      status: 200,
+      isAccessible: true,
+      seoExtractionSuccess: true,
+      h1: h1s,
+      metaTitle,
+      metaDescription,
+      imagesTotal: $('img').length,
+      imagesMissingAlt: $('img:not([alt])').length,
+      buttons: buttonsData,
+      links: [],
+      forms: [],
+      contactInfo: {
+        phones: phoneMatch ? [phoneMatch[1]] : [],
+        emails: emailMatch ? [emailMatch[1]] : [],
+        addresses: [],
+        socials: { instagram: 'Missing', linkedin: 'Missing', facebook: 'Missing', twitter: 'Missing' }
+      },
+      visibleText: $('body').text().replace(/\s+/g, ' ').trim()
+    }];
+
+    return {
+      baseUrl: cleanUrl,
+      siteTitle,
+      pages: pagesData,
+      discoveredPageNames: ['Homepage'],
+      allButtons: buttonsData.map(b => ({ page: 'Homepage', ...b })),
+      linkCounters: { working: buttonsData.length, broken: 0, missing: 0 },
+      globalContactInfo: {
+        phone: { present: !!phoneMatch, value: phoneMatch ? phoneMatch[1] : undefined },
+        email: { present: !!emailMatch, value: emailMatch ? emailMatch[1] : undefined },
+        address: { present: false },
+        instagram: 'Missing',
+        linkedin: 'Missing',
+        facebook: 'Missing',
+        twitter: 'Missing'
+      }
+    };
+  } catch (err: any) {
+    throw new Error(`Website request failed: ${err.message || 'Could not fetch website'}`);
   }
 }
