@@ -133,6 +133,22 @@ app.use((req, res, next) => {
   });
 });
 
+// Express global error handler to prevent empty response bodies
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('[Express Global Error]', err);
+  if (!res.headersSent) {
+    res.status(500).json({ success: false, error: err.message || 'An unexpected error occurred during QA analysis.' });
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]', err);
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Client Delivery QA Validation Server listening on 0.0.0.0:${PORT}`);
 });

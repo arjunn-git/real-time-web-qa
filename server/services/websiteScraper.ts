@@ -115,7 +115,13 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote',
+        '--renderer-process-limit=1',
+        '--no-first-run',
+        '--ignore-certificate-errors',
+        '--js-flags="--max-old-space-size=128"'
       ]
     };
 
