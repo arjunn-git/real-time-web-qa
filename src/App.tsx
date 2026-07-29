@@ -46,7 +46,8 @@ export const App: React.FC = () => {
         formData.append('documentFile', selectedFile);
         formData.append('websiteUrl', websiteUrl.trim());
 
-        response = await fetch('/api/validate-upload', {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+        response = await fetch(`${API_BASE}/api/validate-upload`, {
           method: 'POST',
           body: formData,
         });
@@ -55,7 +56,8 @@ export const App: React.FC = () => {
           throw new Error('Please paste your original website copy.');
         }
         setAnalysisStep('2. Parsing Pasted Copy & Inspecting Website Pages...');
-        response = await fetch('/api/validate-paste', {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+        response = await fetch(`${API_BASE}/api/validate-paste`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
