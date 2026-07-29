@@ -7,7 +7,7 @@ import { extractTextFromFileBuffer } from './services/fileDocumentExtractor';
 import { runDeliveryQaEngine } from './services/deliveryQaEngine';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB limit
 
 app.use(cors());
@@ -133,6 +133,6 @@ app.use((req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Client Delivery QA Validation Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Client Delivery QA Validation Server listening on 0.0.0.0:${PORT}`);
 });
