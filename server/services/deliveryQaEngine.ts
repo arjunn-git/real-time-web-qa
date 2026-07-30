@@ -1,6 +1,6 @@
 import type { FullWebsiteScrapeResult, PageScrapeData } from './websiteScraper';
 import type { GoogleDocResult } from './googleDocFetcher';
-import { arePhonesEquivalent, areEmailsEquivalent, compareCtaOrCopy } from '../utils/contentNormalizer';
+import { arePhonesEquivalent, areEmailsEquivalent, compareCtaOrCopy, calculateTextSimilarity } from '../utils/contentNormalizer';
 
 export interface PageValidationResult {
   name: string;
@@ -275,6 +275,41 @@ export function runDeliveryQaEngine(
       } else {
         contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', `Section Heading ("${h}")`, h, 'Not Found on Website', 'Section heading specified in document copy is missing on website');
         missingContentCount++;
+      }
+    });
+  }
+
+  // Perform deep paragraph, sentence, and bullet point audit
+  const docParagraphs = docText.split(/\r?\n/).map(p => p.trim()).filter(p => p.length > 25);
+  const allSiteVisibleText = siteData.pages.map(p => p.visibleText.toLowerCase()).join(' ');
+
+  if (docParagraphs.length > 0) {
+    const sampleParagraphs = docParagraphs.slice(0, 8); // Audit up to 8 key paragraphs
+    sampleParagraphs.forEach((para, idx) => {
+      const paraLower = para.toLowerCase();
+      // Check exact inclusion
+      if (allSiteVisibleText.includes(paraLower)) {
+        contentDiscrepancyAdd(contentDiscrepancies, 'Matched Content', `Document Paragraph ${idx + 1}`, para.substring(0, 60) + '...', para.substring(0, 60) + '...', 'Exact paragraph match on website');
+      } else {
+        // Calculate similarity with all page texts
+        let bestMatchRatio = 0;
+        let bestMatchSnippet = '';
+        siteData.pages.forEach(p => {
+          const sim = calculateTextSimilarity(para, p.visibleText);
+          if (sim > bestMatchRatio) {
+            bestMatchRatio = sim;
+            bestMatchSnippet = p.visibleText.substring(0, 60) + '...';
+          }
+        });
+
+        if (bestMatchRatio >= 0.65) {
+          contentDiscrepancyAdd(contentDiscrepancies, 'Minor Formatting Difference', `Document Paragraph ${idx + 1}`, para.substring(0, 60) + '...', bestMatchSnippet, `Minor wording variation (${Math.round(bestMatchRatio * 100)}% match)`);
+        } else if (bestMatchRatio >= 0.35) {
+          contentDiscrepancyAdd(contentDiscrepancies, 'Partial Match', `Document Paragraph ${idx + 1}`, para.substring(0, 60) + '...', bestMatchSnippet, `Partial text match (${Math.round(bestMatchRatio * 100)}% match)`);
+        } else {
+          contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', `Document Paragraph ${idx + 1}`, para.substring(0, 70) + '...', 'Not Found on Website', 'Paragraph specified in document copy is missing on website');
+          missingContentCount++;
+        }
       }
     });
   }

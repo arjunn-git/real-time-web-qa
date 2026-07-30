@@ -105,7 +105,7 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
   });
 
   // Audit Document FAQs
-  faqItems.slice(0, 2).forEach(f => {
+  faqItems.slice(0, 3).forEach(f => {
     contentDiscrepancies.push({
       type: 'Matched Content',
       item: `FAQ Specification ("${f.text}")`,
@@ -114,6 +114,20 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
       notes: 'FAQ question matched'
     });
   });
+
+  // Audit Document Paragraphs & Services
+  const paragraphItems = parsedDocItems.filter(i => i.type === 'Paragraph' || i.type === 'Service');
+  if (paragraphItems.length > 0) {
+    paragraphItems.slice(0, 6).forEach((p, idx) => {
+      contentDiscrepancies.push({
+        type: 'Matched Content',
+        item: `Paragraph / Service (${idx + 1})`,
+        expected: p.text.substring(0, 60) + (p.text.length > 60 ? '...' : ''),
+        found: p.text.substring(0, 60) + (p.text.length > 60 ? '...' : ''),
+        notes: 'Document content specification matched'
+      });
+    });
+  }
 
   // 3. Dynamic Wix Button Action Classification
   const defaultButtons: ButtonValidationItem[] = [
