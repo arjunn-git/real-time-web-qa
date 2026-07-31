@@ -181,6 +181,15 @@ export function runDeliveryQaEngine(
       passedChecks.push('Buttons Action Assigned');
     }
 
+    // Check Intent Links Rule (Minimum 2 Intent Links required in content per page)
+    const validIntentLinks = pageData.buttons.filter(b => b.isValid !== false).length + pageData.links.filter(l => !l.isMissing).length;
+    if (validIntentLinks < 2) {
+      missingContent.push(`Insufficient Intent Links (${validIntentLinks} found, minimum 2 required per page)`);
+      brokenLinksCount += (2 - validIntentLinks);
+    } else {
+      passedChecks.push(`Intent Links Verified (${validIntentLinks} present)`);
+    }
+
     // Check Page Status
     const isPassed = missingContent.length === 0;
     pageWiseReport.push({

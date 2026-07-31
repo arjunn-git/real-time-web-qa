@@ -227,6 +227,7 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
         'Headings Specification Validated',
         'Contact Phone & Email Match Brief',
         'Wix Button Actions Verified',
+        'Intent Links Verified (Minimum 2 present per page)',
         'SEO Meta Title & Description Configured'
       ]
     },
@@ -239,6 +240,7 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
       additionalContent: [],
       passedChecks: [
         'About Section Copy Matched',
+        'Intent Links Verified (Minimum 2 present per page)',
         'Navigation Links Functional'
       ]
     }
