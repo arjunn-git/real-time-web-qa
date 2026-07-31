@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FileSearch, 
   MousePointer, 
@@ -6,46 +6,207 @@ import {
   Phone, 
   Search, 
   FormInput, 
-  CheckCircle2
+  CheckCircle2,
+  Filter,
+  Layers,
+  Wrench
 } from 'lucide-react';
-import type { DeliveryQaReport } from '../../server/services/deliveryQaEngine';
+import type { DeliveryQaReport, ContentDiscrepancyResult } from '../../server/services/deliveryQaEngine';
 
 interface ChecklistSectionsProps {
   report: DeliveryQaReport;
 }
 
 export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) => {
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
+  const [selectedPageFilter, setSelectedPageFilter] = useState<string>('ALL_PAGES');
+
+  // Extract unique pages from discrepancies
+  const availablePages = Array.from(
+    new Set(
+      report.contentDiscrepancies
+        .map(d => d.page || 'Homepage')
+        .filter(Boolean)
+    )
+  );
+
+  // Filter discrepancies by Type and Page
+  const filteredDiscrepancies = report.contentDiscrepancies.filter(item => {
+    const matchesType = 
+      selectedTypeFilter === 'ALL' ? true :
+      selectedTypeFilter === 'MISSING' ? item.type === 'Missing Content' :
+      selectedTypeFilter === 'INCORRECT' ? item.type === 'Incorrect Content' :
+      selectedTypeFilter === 'FORMATTING' ? (item.type === 'Minor Formatting Difference' || item.type === 'Partial Match') :
+      selectedTypeFilter === 'MATCHED' ? item.type === 'Matched Content' : true;
+
+    const pageName = item.page || 'Homepage';
+    const matchesPage = selectedPageFilter === 'ALL_PAGES' ? true : pageName === selectedPageFilter;
+
+    return matchesType && matchesPage;
+  });
+
+  // Calculate counters
+  const missingCount = report.contentDiscrepancies.filter(d => d.type === 'Missing Content').length;
+  const incorrectCount = report.contentDiscrepancies.filter(d => d.type === 'Incorrect Content').length;
+  const formattingCount = report.contentDiscrepancies.filter(d => d.type === 'Minor Formatting Difference' || d.type === 'Partial Match').length;
+  const matchedCount = report.contentDiscrepancies.filter(d => d.type === 'Matched Content').length;
+
+  const getActionableFix = (item: ContentDiscrepancyResult): string => {
+    const pName = item.page || 'Website';
+    if (item.type === 'Missing Content') {
+      return `Add missing specification "${item.expected || item.item}" to ${pName}.`;
+    }
+    if (item.type === 'Incorrect Content') {
+      return `Update ${item.item} on ${pName} from "${item.found}" to expected "${item.expected}".`;
+    }
+    if (item.type === 'Minor Formatting Difference' || item.type === 'Partial Match') {
+      return `Align text formatting on ${pName} to match exact document wording.`;
+    }
+    return `Content verified on ${pName}.`;
+  };
+
   return (
     <div className="checklist-sections-container">
 
-      {/* 2. CONTENT VALIDATION (Missing, Incorrect, Additional, Partial) */}
+      {/* 2. PAGE-WISE MISSING & INCORRECT CONTENT AUDIT MATRIX */}
       <div className="qa-section-card">
         <div className="section-title-row">
           <FileSearch className="section-icon cyan" size={20} />
           <div>
-            <h3>2. Content Validation</h3>
-            <p>Direct comparison of Google Doc specifications vs live Website content</p>
+            <h3>2. Document vs Website Content Audit Matrix</h3>
+            <p>Page-by-page breakdown of missing, incorrect, and matched document specifications</p>
           </div>
         </div>
 
-        {report.contentDiscrepancies.length === 0 ? (
+        {/* Audit Metric Counters Bar */}
+        <div className="link-counters-row" style={{ marginBottom: '18px' }}>
+          <div className={`link-counter ${missingCount > 0 ? 'red' : 'green'}`}>
+            <span className="count-num">{missingCount}</span>
+            <span className="count-label">Missing Content Snippets</span>
+          </div>
+          <div className={`link-counter ${incorrectCount > 0 ? 'amber' : 'green'}`}>
+            <span className="count-num">{incorrectCount}</span>
+            <span className="count-label">Incorrect / Mismatched Snippets</span>
+          </div>
+          <div className="link-counter blue">
+            <span className="count-num">{formattingCount}</span>
+            <span className="count-label">Minor Wording Differences</span>
+          </div>
+          <div className="link-counter green">
+            <span className="count-num">{matchedCount}</span>
+            <span className="count-label">Matched Document Specs</span>
+          </div>
+        </div>
+
+        {/* Filter Controls Row */}
+        <div className="matrix-filter-controls" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          {/* Status Type Filters */}
+          <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Filter size={15} style={{ color: 'var(--text-secondary)' }} />
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Status:</span>
+            <div className="input-options-tabs" style={{ margin: 0 }}>
+              <button 
+                type="button" 
+                className={`option-tab-btn ${selectedTypeFilter === 'ALL' ? 'active' : ''}`}
+                onClick={() => setSelectedTypeFilter('ALL')}
+              >
+                All ({report.contentDiscrepancies.length})
+              </button>
+              <button 
+                type="button" 
+                className={`option-tab-btn ${selectedTypeFilter === 'MISSING' ? 'active' : ''}`}
+                onClick={() => setSelectedTypeFilter('MISSING')}
+              >
+                Missing ({missingCount})
+              </button>
+              <button 
+                type="button" 
+                className={`option-tab-btn ${selectedTypeFilter === 'INCORRECT' ? 'active' : ''}`}
+                onClick={() => setSelectedTypeFilter('INCORRECT')}
+              >
+                Incorrect ({incorrectCount})
+              </button>
+              <button 
+                type="button" 
+                className={`option-tab-btn ${selectedTypeFilter === 'FORMATTING' ? 'active' : ''}`}
+                onClick={() => setSelectedTypeFilter('FORMATTING')}
+              >
+                Wording Diff ({formattingCount})
+              </button>
+            </div>
+          </div>
+
+          {/* Page Filters */}
+          {availablePages.length > 0 && (
+            <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+              <Layers size={15} style={{ color: 'var(--text-secondary)' }} />
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Target Page:</span>
+              <select 
+                value={selectedPageFilter} 
+                onChange={(e) => setSelectedPageFilter(e.target.value)}
+                style={{
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid var(--border-color)',
+                  color: '#fff',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  outline: 'none'
+                }}
+              >
+                <option value="ALL_PAGES">All Target Pages</option>
+                {availablePages.map((pg, i) => (
+                  <option key={i} value={pg}>{pg}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Matrix List / Table */}
+        {filteredDiscrepancies.length === 0 ? (
           <div className="clean-passed-box">
             <CheckCircle2 size={20} />
-            <span>✓ All Document copy & contact specifications match live Website content.</span>
+            <span>✓ No content issues found for the selected page and filter criteria.</span>
           </div>
         ) : (
           <div className="discrepancies-list">
-            {report.contentDiscrepancies.map((item, idx) => {
+            {filteredDiscrepancies.map((item, idx) => {
               const statusSlug = item.type.toLowerCase().replace(/\s+/g, '-');
+              const targetPage = item.page || 'Homepage';
+              const fixInstruction = getActionableFix(item);
+
               return (
-                <div key={idx} className={`discrepancy-item ${statusSlug}`}>
-                  <div className="discrepancy-header">
+                <div key={idx} className={`discrepancy-item ${statusSlug}`} style={{ padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
+                  <div className="discrepancy-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <span className={`type-badge ${statusSlug}`}>{item.type}</span>
-                    <span className="item-title">{item.item}</span>
+                    <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: 'var(--accent-cyan)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
+                      Page: {targetPage}
+                    </span>
+                    <span className="item-title" style={{ fontWeight: 700, fontSize: '0.92rem' }}>{item.item}</span>
                   </div>
-                  {item.expected && <div className="detail-line"><strong>Expected (Doc):</strong> {item.expected}</div>}
-                  {item.found && <div className="detail-line"><strong>Found (Site):</strong> {item.found}</div>}
-                  {item.notes && <div className="detail-line notes"><strong>Notes:</strong> {item.notes}</div>}
+
+                  <div className="matrix-details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'rgba(0, 0, 0, 0.25)', padding: '12px', borderRadius: '8px', marginBottom: '8px' }}>
+                    <div className="detail-line">
+                      <strong style={{ color: 'var(--accent-cyan)', display: 'block', marginBottom: '4px', fontSize: '0.78rem' }}>
+                        📄 Approved Copy (Document Brief):
+                      </strong>
+                      <span style={{ fontSize: '0.85rem', color: '#f1f5f9' }}>{item.expected || 'Not Specified'}</span>
+                    </div>
+
+                    <div className="detail-line">
+                      <strong style={{ color: item.type === 'Missing Content' ? '#f87171' : '#fbbf24', display: 'block', marginBottom: '4px', fontSize: '0.78rem' }}>
+                        🌐 Live Website Value (Found):
+                      </strong>
+                      <span style={{ fontSize: '0.85rem', color: '#f1f5f9' }}>{item.found || 'Not Found on Page'}</span>
+                    </div>
+                  </div>
+
+                  <div className="actionable-fix-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                    <Wrench size={14} style={{ color: 'var(--accent-cyan)' }} />
+                    <span><strong>Recommended Fix:</strong> {fixInstruction}</span>
+                  </div>
                 </div>
               );
             })}
@@ -210,7 +371,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
           </span>
         </div>
 
-        {/* 5 High Level Summary Pills */}
+        {/* Summary Pills */}
         <div className="seo-summary-row" style={{ marginBottom: '20px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
           <div className="seo-pill" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
             <span className="seo-label">Meta Title Status</span>
