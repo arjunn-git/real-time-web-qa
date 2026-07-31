@@ -1,5 +1,16 @@
 import React from 'react';
-import { Rocket, AlertTriangle, AlertCircle, FileX, Link2Off, MousePointerClick, Search, PhoneCall, FormInput } from 'lucide-react';
+import { 
+  Rocket, 
+  AlertTriangle, 
+  AlertCircle, 
+  FileX, 
+  Link2Off, 
+  MousePointerClick, 
+  Search, 
+  PhoneCall, 
+  FormInput,
+  PieChart
+} from 'lucide-react';
 import type { DeliveryQaReport } from '../../server/services/deliveryQaEngine';
 
 interface DeliveryStatusBannerProps {
@@ -41,6 +52,17 @@ export const DeliveryStatusBanner: React.FC<DeliveryStatusBannerProps> = ({
 
   const config = getBannerConfig(report.websiteDeliveryStatus);
 
+  // Content Coverage Calculations
+  const totalSpecs = report.contentDiscrepancies.length;
+  const missingCount = report.contentDiscrepancies.filter(d => d.type === 'Missing Content').length;
+  const matchedCount = report.contentDiscrepancies.filter(d => d.type === 'Matched Content').length;
+  const formattingCount = report.contentDiscrepancies.filter(d => d.type === 'Minor Formatting Difference' || d.type === 'Partial Match').length;
+  const incorrectCount = report.contentDiscrepancies.filter(d => d.type === 'Incorrect Content').length;
+
+  const presentCount = matchedCount + formattingCount;
+  const presentPercent = totalSpecs > 0 ? Math.round((presentCount / totalSpecs) * 100) : 100;
+  const missingPercent = 100 - presentPercent;
+
   return (
     <div className="delivery-summary-container">
       {/* HIGH-IMPACT STATUS BANNER */}
@@ -57,6 +79,73 @@ export const DeliveryStatusBanner: React.FC<DeliveryStatusBannerProps> = ({
         <div className="total-issues-pill">
           <span className="issues-count">{report.totalIssuesCount}</span>
           <span className="issues-label">Total Issues</span>
+        </div>
+      </div>
+
+      {/* WHOLE WEBSITE CONTENT COVERAGE & COMPLETION SCORECARD */}
+      <div className="content-coverage-scorecard" style={{
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+        border: '1px solid var(--border-color)',
+        borderRadius: '16px',
+        padding: '20px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <PieChart size={22} style={{ color: 'var(--accent-cyan)' }} />
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#fff' }}>
+                Whole Website Content Coverage Audit
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                Total Document Specifications vs Live Website Content Breakdown
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '6px 14px', borderRadius: '10px', textAlign: 'right' }}>
+              <span style={{ fontSize: '0.72rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Content Present</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#34d399' }}>{presentPercent}%</span>
+            </div>
+
+            <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '6px 14px', borderRadius: '10px', textAlign: 'right' }}>
+              <span style={{ fontSize: '0.72rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Content Missing</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#f87171' }}>{missingPercent}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Progress Bar */}
+        <div style={{ height: '14px', background: 'rgba(0, 0, 0, 0.5)', borderRadius: '8px', overflow: 'hidden', display: 'flex', marginBottom: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          <div style={{ width: `${(matchedCount / (totalSpecs || 1)) * 100}%`, background: '#10b981' }} title="Matched Content" />
+          <div style={{ width: `${(formattingCount / (totalSpecs || 1)) * 100}%`, background: '#3b82f6' }} title="Wording Differences" />
+          <div style={{ width: `${(incorrectCount / (totalSpecs || 1)) * 100}%`, background: '#f59e0b' }} title="Incorrect Content" />
+          <div style={{ width: `${(missingCount / (totalSpecs || 1)) * 100}%`, background: '#ef4444' }} title="Missing Content" />
+        </div>
+
+        {/* Breakdown Stats Badges */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px 14px', borderRadius: '10px', borderLeft: '4px solid #10b981' }}>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', fontWeight: 600 }}>Exact Matched Specs</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#34d399' }}>{matchedCount} / {totalSpecs} Items</span>
+          </div>
+
+          <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '10px 14px', borderRadius: '10px', borderLeft: '4px solid #3b82f6' }}>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', fontWeight: 600 }}>Wording / Formatting Diff</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#60a5fa' }}>{formattingCount} Items</span>
+          </div>
+
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px 14px', borderRadius: '10px', borderLeft: '4px solid #ef4444' }}>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', fontWeight: 600 }}>Missing Content Specs</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f87171' }}>{missingCount} / {totalSpecs} Items</span>
+          </div>
+
+          <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '10px 14px', borderRadius: '10px', borderLeft: '4px solid #f59e0b' }}>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', fontWeight: 600 }}>Incorrect / Mismatched</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fbbf24' }}>{incorrectCount} Items</span>
+          </div>
         </div>
       </div>
 
