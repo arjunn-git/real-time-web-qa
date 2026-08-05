@@ -1,40 +1,6 @@
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import fs from 'fs';
-import path from 'path';
-
-function findLocalChromePath(): string | undefined {
-  if (process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH) {
-    return process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN || process.env.CHROME_PATH;
-  }
-
-  const projectCachePath = path.join(process.cwd(), '.cache', 'puppeteer', 'chrome');
-  if (fs.existsSync(projectCachePath)) {
-    try {
-      const versions = fs.readdirSync(projectCachePath);
-      for (const ver of versions) {
-        const linuxBin = path.join(projectCachePath, ver, 'chrome-linux64', 'chrome');
-        if (fs.existsSync(linuxBin)) return linuxBin;
-        const winBin = path.join(projectCachePath, ver, 'chrome-win64', 'chrome.exe');
-        if (fs.existsSync(winBin)) return winBin;
-      }
-    } catch (e) {}
-  }
-
-  const renderCachePath = '/opt/render/.cache/puppeteer/chrome';
-  if (fs.existsSync(renderCachePath)) {
-    try {
-      const versions = fs.readdirSync(renderCachePath);
-      for (const ver of versions) {
-        const linuxBin = path.join(renderCachePath, ver, 'chrome-linux64', 'chrome');
-        if (fs.existsSync(linuxBin)) return linuxBin;
-      }
-    } catch (e) {}
-  }
-
-  return undefined;
-}
 
 export interface ScrapedButtonData {
   text: string;
@@ -71,6 +37,19 @@ export interface PageScrapeData {
     };
   };
   visibleText: string;
+  structuredContent?: {
+    name: string;
+    sections: Array<{
+      name: string;
+      heading?: string;
+      paragraphs: string[];
+      lists: string[];
+      buttons: string[];
+      tables?: string[][][];
+      forms?: string[];
+      footer?: string;
+    }>;
+  };
 }
 
 export interface FullWebsiteScrapeResult {
@@ -100,7 +79,7 @@ function getCleanUrl(urlStr: string): string {
 }
 
 /**
- * Scrapes full multi-page website with Wix SEO confidence verification & page deduplication
+ * Scrapes full multi-page website using Playwright with page traversal and structured hierarchy extraction.
  */
 export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteScrapeResult> {
   const cleanUrl = getCleanUrl(targetUrl);
@@ -110,49 +89,28 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
   let browser = null;
 
   try {
-    const launchOptions: any = {
+    browser = await chromium.launch({
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--single-process',
-        '--no-zygote',
-        '--renderer-process-limit=1',
-        '--no-first-run',
-        '--ignore-certificate-errors',
-        '--js-flags="--max-old-space-size=128"'
-      ]
-    };
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    });
 
-    const detectedChrome = findLocalChromePath();
-    if (detectedChrome) {
-      launchOptions.executablePath = detectedChrome;
-    }
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      viewport: { width: 1366, height: 768 }
+    });
 
-    browser = await puppeteer.launch(launchOptions);
-
-    const mainPage = await browser.newPage();
-    await mainPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-    await mainPage.setViewport({ width: 1366, height: 768 });
-
-    // Accelerate scraping speed by blocking heavy media assets
-    await mainPage.setRequestInterception(true);
-    mainPage.on('request', (req) => {
-      const type = req.resourceType();
+    // Block image, font, and media assets for high performance
+    await context.route('**/*', (route) => {
+      const type = route.request().resourceType();
       if (['image', 'media', 'font'].includes(type)) {
-        req.abort();
+        route.abort();
       } else {
-        req.continue();
+        route.continue();
       }
     });
 
-    const response = await mainPage.goto(cleanUrl, {
-      waitUntil: 'domcontentloaded',
-      timeout: 15000
-    });
+    const page = await context.newPage();
+    const response = await page.goto(cleanUrl, { waitUntil: 'load', timeout: 30000 });
 
     if (!response) {
       throw new Error('Website failed to load or returned no response.');
@@ -161,36 +119,32 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
       throw new Error('Website blocked automated access (403 Forbidden).');
     }
     if (response.status() === 404) {
-      throw new Error('Website homepage not found (404 Error). Please check the URL.');
+      throw new Error('Website homepage not found (404 Error).');
     }
 
-    const mainTitle = await mainPage.title();
+    // Wait for dynamic Wix state rendering to settle
+    await page.waitForTimeout(2000);
 
-    // Discover internal links with strict deduplication
-    const discoveredLinksStr = `
-      ((siteOrigin) => {
-        const anchors = Array.from(document.querySelectorAll('a[href]'));
-        const links = new Set();
-        anchors.forEach(a => {
-          const href = a.getAttribute('href');
-          if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
-            try {
-              const absolute = new URL(href, siteOrigin).href;
-              if (absolute.startsWith(siteOrigin)) {
-                // Normalize URL to remove trailing slashes and hash fragments
-                const cleanLink = absolute.split('#')[0].replace(/\\/$/, '');
-                links.add(cleanLink);
-              }
-            } catch (e) {}
-          }
-        });
-        return Array.from(links);
-      })("${origin}")
-    `;
+    const mainTitle = await page.title();
 
-    const discoveredLinks: string[] = await mainPage.evaluate(discoveredLinksStr as any);
+    // Discover internal links with strict origin restrictions
+    const discoveredLinks: string[] = await page.$$eval('a[href]', (anchors, baseOrigin) => {
+      const links = new Set<string>();
+      anchors.forEach(a => {
+        const href = a.getAttribute('href');
+        if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+          try {
+            const absolute = new URL(href, baseOrigin).href;
+            if (absolute.startsWith(baseOrigin)) {
+              const cleanLink = absolute.split('#')[0].replace(/\/$/, '');
+              links.add(cleanLink);
+            }
+          } catch (e) {}
+        }
+      });
+      return Array.from(links);
+    }, origin);
 
-    // Deduplicate URLs to inspect
     const urlsToInspect: string[] = [];
     const seenUrls = new Set<string>();
 
@@ -200,7 +154,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
 
     discoveredLinks.forEach(l => {
       const normL = l.split('#')[0].replace(/\/$/, '');
-      if (!seenUrls.has(normL) && urlsToInspect.length < 8) {
+      if (!seenUrls.has(normL) && urlsToInspect.length < 10) {
         seenUrls.add(normL);
         urlsToInspect.push(l);
       }
@@ -221,193 +175,171 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
     let globalFB: 'Working' | 'Missing' = 'Missing';
     let globalTwitter: 'Working' | 'Missing' = 'Missing';
 
-    // Page inspection script with Wix Head SEO Hydration verification
+    // Core page element and structured hierarchy extractor script
     const pageInspectScript = `
       (() => {
         let seoExtractionSuccess = true;
-        
         const h1s = Array.from(document.querySelectorAll('h1')).map(h => (h.textContent || '').trim()).filter(Boolean);
         const metaTitle = document.title || '';
         
         let metaDescription = '';
-        const metaDescEl = document.querySelector('meta[name="description" i], meta[name="Description" i], meta[property="og:description" i], meta[property="og:Description" i], meta[name="twitter:description" i]');
-        if (metaDescEl) {
-          metaDescription = (metaDescEl.getAttribute('content') || '').trim();
-        }
-        if (!metaDescription) {
-          const allMetas = Array.from(document.querySelectorAll('meta'));
-          for (const m of allMetas) {
-            const name = (m.getAttribute('name') || m.getAttribute('property') || '').toLowerCase();
-            if (name.includes('description')) {
-              const content = (m.getAttribute('content') || '').trim();
-              if (content) { metaDescription = content; break; }
-            }
-          }
-        }
-
-        // If DOM document head is inaccessible or empty during SPA load
-        if (!document.head || (document.head.children.length === 0 && !metaTitle)) {
-          seoExtractionSuccess = false;
-        }
+        const metaDescEl = document.querySelector('meta[name="description" i], meta[property="og:description" i]');
+        if (metaDescEl) metaDescription = (metaDescEl.getAttribute('content') || '').trim();
 
         const imgs = Array.from(document.querySelectorAll('img'));
         const imagesTotal = imgs.length;
-        const imagesMissingAlt = imgs.filter(img => !img.getAttribute('alt') || img.getAttribute('alt')?.trim() === '').length;
+        const imagesMissingAlt = imgs.filter(img => !img.getAttribute('alt')?.trim()).length;
 
+        // Button action classifier
         function classifyButtonAction(el) {
           const href = (el.getAttribute('href') || el.getAttribute('data-href') || '').trim();
           const hrefLower = href.toLowerCase();
           const type = (el.getAttribute('type') || '').toLowerCase();
           const className = (el.className || '').toString().toLowerCase();
           const id = (el.getAttribute('id') || '').toLowerCase();
-          const ariaHasPopup = el.getAttribute('aria-haspopup');
-          const dataAction = (el.getAttribute('data-action') || el.getAttribute('data-popup') || el.getAttribute('data-lightbox') || '').toLowerCase();
-          const textLower = (el.textContent || '').toLowerCase().trim();
 
           if (hrefLower.startsWith('tel:')) return { actionType: 'Phone Link', isValid: true, statusLabel: 'Phone Link (Valid)' };
           if (hrefLower.startsWith('mailto:')) return { actionType: 'Email Link', isValid: true, statusLabel: 'Email Link (Valid)' };
-
-          const isFormElement = type === 'submit' || !!el.closest('form') || id.includes('submit') || className.includes('submit') || className.includes('form-button');
-          if (isFormElement || textLower.includes('quote') || textLower.includes('submit') || textLower.includes('request free') || textLower.includes('send message')) {
+          if (type === 'submit' || !!el.closest('form') || id.includes('submit')) {
             return { actionType: 'Opens Lead Form', isValid: true, statusLabel: 'Opens Lead Form (Valid)' };
           }
-
-          const isPopup = ariaHasPopup === 'true' || ariaHasPopup === 'dialog' || dataAction.includes('popup') || dataAction.includes('lightbox') || className.includes('lightbox') || className.includes('popup') || className.includes('modal') || hrefLower.includes('lightbox') || hrefLower.includes('popup');
-          if (isPopup || textLower.includes('find out more') || textLower.includes('learn more') || textLower.includes('view details')) {
-            return { actionType: 'Opens Popup', isValid: true, statusLabel: 'Opens Popup (Valid)' };
-          }
-
           if (hrefLower.startsWith('#') && hrefLower.length > 1) {
             return { actionType: 'Scrolls to Section', isValid: true, statusLabel: 'Scrolls to Section (Valid)' };
           }
-
-          const isWixVelo = className.includes('wixui-button') || className.includes('wixui') || id.includes('comp-') || typeof el.onclick === 'function' || el.hasAttribute('data-action') || hrefLower.startsWith('javascript:');
-          if (isWixVelo && (href === '#' || href === '' || hrefLower.startsWith('javascript:'))) {
-            return { actionType: 'Velo Custom Action', isValid: true, statusLabel: 'Velo Action (Valid)' };
-          }
-
           if (href && (href.startsWith('/') || href.startsWith('http'))) {
-            if (href.includes(window.location.hostname) || href.startsWith('/')) {
+            if (href.startsWith('/') || href.includes(window.location.hostname)) {
               return { actionType: 'Internal Page Link', isValid: true, statusLabel: 'Internal Page Link (Valid)' };
             }
             return { actionType: 'External URL', isValid: true, statusLabel: 'External URL (Valid)' };
           }
-
           if (!href || href === '#' || href === '') {
             return { actionType: 'Missing Action', isValid: false, statusLabel: 'Missing Action' };
           }
-
           return { actionType: 'Internal Page Link', isValid: true, statusLabel: 'Internal Page Link (Valid)' };
         }
 
-        function isActualButton(el) {
-          const text = (el.textContent || el.getAttribute('aria-label') || '').trim();
+        // Element type checks
+        function isButton(el) {
           const tagName = el.tagName.toLowerCase();
           const role = (el.getAttribute('role') || '').toLowerCase();
-          const type = (el.getAttribute('type') || '').toLowerCase();
           const className = (el.className || '').toString().toLowerCase();
-
-          if (text.endsWith('?') || text.includes('?') || text.length > 80) return false;
-          if (role === 'tab' || el.closest('.faq, [class*="faq"], [class*="accordion"], [class*="collapse"], [data-toggle="collapse"]')) return false;
-          
-          const ariaExpanded = el.getAttribute('aria-expanded');
-          const ariaControls = el.getAttribute('aria-controls');
-          if ((ariaExpanded !== null || ariaControls !== null) && !className.includes('btn') && !className.includes('cta')) return false;
-
-          const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
-          if (ariaLabel.includes('menu') || ariaLabel.includes('navigation') || className.includes('hamburger') || className.includes('nav-toggle')) return false;
-
-          if (tagName === 'button' || (tagName === 'input' && (type === 'submit' || type === 'button' || type === 'reset'))) return true;
-          if (role === 'button') return true;
-
-          const buttonClassPattern = /(^|\\s|_|-)(btn|button|cta|action-btn|submit-btn|booking-btn|elementor-button|wixui-button|sqs-block-button-element|wp-block-button__link)($|\\s|_|-)/i;
-          if (tagName === 'a' && buttonClassPattern.test(className)) return true;
-
-          if (tagName === 'a' && typeof window.getComputedStyle === 'function') {
-            try {
-              const style = window.getComputedStyle(el);
-              const bg = style.backgroundColor;
-              const border = style.borderStyle;
-              const borderRadius = parseFloat(style.borderRadius) || 0;
-              const hasPadding = (parseFloat(style.paddingTop) || 0) >= 4 && (parseFloat(style.paddingLeft) || 0) >= 8;
-              const hasBackground = bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
-              const hasBorder = border && border !== 'none' && border !== 'hidden';
-
-              if (hasPadding && (hasBackground || hasBorder || borderRadius > 0)) return true;
-            } catch (e) {}
-          }
+          if (tagName === 'button' || role === 'button') return true;
+          if (tagName === 'a' && (className.includes('btn') || className.includes('button') || className.includes('cta'))) return true;
           return false;
         }
 
-        const allInteractive = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], [role="button"], a[href], a.btn, a.cta, a.button, [class*="wixui-button"]'));
-        
-        const actualButtonsData = [];
-        const textLinksData = [];
+        const allInteractive = Array.from(document.querySelectorAll('a, button, input[type="submit"], input[type="button"], [role="button"]'));
+        const buttonsData = [];
+        const linksData = [];
 
         allInteractive.forEach(el => {
-          const text = (el.textContent || el.getAttribute('aria-label') || el.getAttribute('value') || '').replace(/\\s+/g, ' ').trim();
-          const href = el.getAttribute('href') || el.getAttribute('data-href') || '';
+          const text = (el.textContent || el.getAttribute('value') || '').trim();
+          const href = el.getAttribute('href') || '';
           if (!text || text.length < 1) return;
 
-          if (isActualButton(el)) {
-            const classification = classifyButtonAction(el);
-            actualButtonsData.push({
-              text,
-              href: href || '#',
-              actionType: classification.actionType,
-              isValid: classification.isValid,
-              statusLabel: classification.statusLabel
-            });
+          if (isButton(el)) {
+            const cl = classifyButtonAction(el);
+            buttonsData.push({ text, href, actionType: cl.actionType, isValid: cl.isValid, statusLabel: cl.statusLabel });
           } else {
-            let isMissing = !href || href === '#' || href.trim() === '';
-            textLinksData.push({
+            linksData.push({
               text,
               href,
               type: (href.startsWith('http') && !href.includes(window.location.hostname)) ? 'external' : 'internal',
               isBroken: false,
-              isMissing
+              isMissing: !href || href === '#'
             });
           }
         });
 
-        const telLinks = Array.from(document.querySelectorAll('a[href^="tel:"]'))
-          .map(a => a.getAttribute('href').replace(/^tel:/i, '').trim())
-          .filter(Boolean);
-
-        const mailtoLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]'))
-          .map(a => a.getAttribute('href').replace(/^mailto:/i, '').trim())
-          .filter(Boolean);
-
-        const allAnchors = Array.from(document.querySelectorAll('a[href]'));
-        let instaFound = false;
-        let linkedinFound = false;
-        let fbFound = false;
-        let twitterFound = false;
-
-        allAnchors.forEach(a => {
+        // Social links
+        let instaFound = false, linkedinFound = false, fbFound = false, twitterFound = false;
+        Array.from(document.querySelectorAll('a[href]')).forEach(a => {
           const href = (a.getAttribute('href') || '').toLowerCase();
           if (href.includes('instagram.com')) instaFound = true;
           if (href.includes('linkedin.com')) linkedinFound = true;
-          if (href.includes('facebook.com') || href.includes('fb.com')) fbFound = true;
+          if (href.includes('facebook.com')) fbFound = true;
           if (href.includes('twitter.com') || href.includes('x.com')) twitterFound = true;
         });
 
-        const formsEl = Array.from(document.querySelectorAll('form'));
-        const formsData = formsEl.map(f => {
-          const inputs = f.querySelectorAll('input, textarea, select');
-          const submitBtn = f.querySelector('button[type="submit"], input[type="submit"], button');
-          let status = submitBtn ? 'Passed' : 'Submit Button Missing';
-          return {
-            type: f.getAttribute('id') || f.getAttribute('name') || 'Contact Form',
-            fieldsCount: inputs.length,
-            hasSubmitButton: !!submitBtn,
-            status
-          };
-        });
+        // Form elements
+        const formsData = Array.from(document.querySelectorAll('form')).map(f => ({
+          type: f.getAttribute('id') || f.getAttribute('name') || 'Form',
+          fieldsCount: f.querySelectorAll('input, textarea, select').length,
+          hasSubmitButton: !!f.querySelector('button, input[type="submit"]'),
+          status: f.querySelector('button, input[type="submit"]') ? 'Passed' : 'Submit Button Missing'
+        }));
+
+        // Document hierarchy traversal in reading order
+        const sections = [];
+        let currentSection = { name: 'Hero', heading: '', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+
+        function classifySectionName(str) {
+          const t = str.toLowerCase().trim();
+          if (t.match(/\\b(hero|welcome|banner|home)\\b/i)) return 'Hero';
+          if (t.match(/\\b(about|who we are|story|company)\\b/i)) return 'About';
+          if (t.match(/\\b(service|what we do|solutions|capabilities)\\b/i)) return 'Services';
+          if (t.match(/\\b(process|how we work)\\b/i)) return 'Process';
+          if (t.match(/\\b(faq|questions|q&a)\\b/i)) return 'FAQs';
+          if (t.match(/\\b(testimonial|reviews|feedback)\\b/i)) return 'Testimonials';
+          if (t.match(/\\b(contact|get in touch|reach us)\\b/i)) return 'Contact';
+          if (t.match(/\\b(footer|copyright|privacy)\\b/i)) return 'Footer';
+          if (t.match(/\\b(cta|call to action|book)\\b/i)) return 'CTA';
+          return 'General';
+        }
+
+        function commitSection() {
+          if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0 || currentSection.buttons.length > 0 || currentSection.tables.length > 0) {
+            sections.push({ ...currentSection });
+            currentSection = { name: 'General', heading: '', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+          }
+        }
+
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, null);
+        let node = walker.currentNode;
+        while (node) {
+          const el = node;
+          const tagName = el.tagName.toLowerCase();
+          const textVal = (el.textContent || '').trim();
+
+          if (tagName === 'section' || tagName === 'header' || tagName === 'footer') {
+            commitSection();
+            currentSection.name = classifySectionName(el.className + ' ' + el.id + ' ' + tagName);
+          }
+          if (/^h[1-6]$/.test(tagName) && textVal) {
+            commitSection();
+            currentSection.name = classifySectionName(textVal);
+            currentSection.heading = textVal;
+          }
+          if ((tagName === 'ul' || tagName === 'ol') && textVal) {
+            el.querySelectorAll('li').forEach(li => {
+              const liText = (li.textContent || '').trim();
+              if (liText) currentSection.lists.push(liText);
+            });
+          }
+          if (tagName === 'table') {
+            const tableRows = [];
+            el.querySelectorAll('tr').forEach(tr => {
+              const row = Array.from(tr.querySelectorAll('td, th')).map(c => (c.textContent || '').trim());
+              if (row.length > 0) tableRows.push(row);
+            });
+            if (tableRows.length > 0) currentSection.tables.push(tableRows);
+          }
+          if (isButton(el) && textVal && textVal.length < 50) {
+            currentSection.buttons.push(textVal);
+          }
+          if (tagName === 'form') {
+            currentSection.forms.push(el.getAttribute('id') || el.getAttribute('name') || 'Form');
+          }
+          if (tagName === 'p' && textVal && textVal.length > 10 && !isButton(el)) {
+            currentSection.paragraphs.push(textVal);
+          }
+
+          node = walker.nextNode();
+        }
+        commitSection();
 
         const bodyText = document.body ? document.body.innerText || '' : '';
-        const addressElText = Array.from(document.querySelectorAll('address, footer, div[class*="footer"], div[id*="footer"], header, div[class*="header"]'))
-          .map(el => el.textContent || '').join(' ');
+        const addressElText = Array.from(document.querySelectorAll('address, footer, header')).map(el => el.textContent || '').join(' ');
 
         return {
           seoExtractionSuccess,
@@ -416,79 +348,65 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           metaDescription,
           imagesTotal,
           imagesMissingAlt,
-          buttonsData: actualButtonsData,
-          linksData: textLinksData,
+          buttonsData,
+          linksData,
           formsData,
-          telLinks,
-          mailtoLinks,
+          telLinks: Array.from(document.querySelectorAll('a[href^="tel:"]')).map(a => a.getAttribute('href').replace(/^tel:/i, '')),
+          mailtoLinks: Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.getAttribute('href').replace(/^mailto:/i, '')),
           instaFound,
           linkedinFound,
           fbFound,
           twitterFound,
           bodyText,
-          addressElText
+          addressElText,
+          sections
         };
       })()
     `;
 
-    // Process inspected pages with unique name deduplication
     const processedPageNames = new Set<string>();
 
-    // Cap total pages to inspect to 4 pages max for super-fast cloud execution
-    const cappedUrlsToInspect = urlsToInspect.slice(0, 4);
-
-    for (const urlItem of cappedUrlsToInspect) {
+    for (const urlItem of urlsToInspect) {
       try {
-        let inspectPage = mainPage;
+        let inspectPage = page;
         let isAccessible = true;
 
         if (urlItem !== cleanUrl) {
-          inspectPage = await browser.newPage();
-          await inspectPage.setRequestInterception(true);
-          inspectPage.on('request', (req) => {
-            if (['image', 'media', 'font'].includes(req.resourceType())) {
-              req.abort();
-            } else {
-              req.continue();
-            }
-          });
-          const pageRes = await inspectPage.goto(urlItem, { waitUntil: 'domcontentloaded', timeout: 10000 });
+          inspectPage = await context.newPage();
+          const pageRes = await inspectPage.goto(urlItem, { waitUntil: 'load', timeout: 20000 });
           if (!pageRes || pageRes.status() >= 400) {
             isAccessible = false;
           }
+          await inspectPage.waitForTimeout(1000);
         }
 
         const currentUrlObj = new URL(urlItem);
         const pathName = currentUrlObj.pathname;
 
-        let pageName = 'Homepage';
+        let pageName = 'Home';
         const cleanPath = pathName.replace(/^\/(website|site|wixsite)-\d+\/?/i, '/').replace(/^\//, '');
 
         if (pathName === '/' || pathName === '' || cleanPath === '') {
-          pageName = 'Homepage';
+          pageName = 'Home';
         } else if (cleanPath.toLowerCase().includes('about')) {
-          pageName = 'About Us';
+          pageName = 'About';
         } else if (cleanPath.toLowerCase().includes('service')) {
           pageName = 'Services';
         } else if (cleanPath.toLowerCase().includes('contact')) {
-          pageName = 'Contact Us';
+          pageName = 'Contact';
         } else if (cleanPath.toLowerCase().includes('faq')) {
           pageName = 'FAQs';
         } else if (cleanPath.toLowerCase().includes('privacy')) {
           pageName = 'Privacy Policy';
         } else if (cleanPath.toLowerCase().includes('term')) {
-          pageName = 'Terms & Conditions';
-        } else if (cleanPath.toLowerCase().includes('blog')) {
-          pageName = 'Blog';
+          pageName = 'Terms';
         } else {
           pageName = cleanPath
             .replace(/[-_/]/g, ' ')
-            .replace(/\b(and|amp)\b/gi, '&')
             .replace(/\b\w/g, c => c.toUpperCase())
             .trim();
         }
 
-        // Deduplicate page names to prevent duplicate entries
         if (processedPageNames.has(pageName.toLowerCase())) {
           if (urlItem !== cleanUrl) await inspectPage.close();
           continue;
@@ -512,7 +430,8 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           fbFound: false,
           twitterFound: false,
           bodyText: '',
-          addressElText: ''
+          addressElText: '',
+          sections: []
         };
 
         if (isAccessible) {
@@ -523,7 +442,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           }
         }
 
-        // Phone Parsing
+        // Parse Phones
         let foundPhone = pageDOM.telLinks.length > 0 ? pageDOM.telLinks[0] : '';
         if (!foundPhone && pageDOM.bodyText) {
           const phoneRegex = /(\+?\d{1,3}[\s.-]?)?\(?\d{2,5}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,5}/g;
@@ -534,7 +453,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           }
         }
 
-        // Email Parsing
+        // Parse Emails
         let foundEmail = pageDOM.mailtoLinks.length > 0 ? pageDOM.mailtoLinks[0] : '';
         if (!foundEmail && pageDOM.bodyText) {
           const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
@@ -542,7 +461,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           if (match) foundEmail = match[1].trim();
         }
 
-        // Address Parsing
+        // Parse Address
         let foundAddress = '';
         const combinedAddressText = pageDOM.addressElText + ' ' + pageDOM.bodyText;
         const ukPostcodeMatch = combinedAddressText.match(/([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})/i);
@@ -606,7 +525,11 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
               twitter: globalTwitter
             }
           },
-          visibleText: pageDOM.bodyText.replace(/\s+/g, ' ').trim()
+          visibleText: pageDOM.bodyText.replace(/\s+/g, ' ').trim(),
+          structuredContent: {
+            name: pageName,
+            sections: pageDOM.sections
+          }
         });
 
         if (urlItem !== cleanUrl) {
@@ -641,7 +564,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
       }
     };
   } catch (error: any) {
-    console.warn('[Puppeteer Scraper Error - Falling back to Static HTTP Scraper]:', error.message);
+    console.warn('[Playwright Scraper Error - Falling back to Cheerio]:', error.message);
     if (browser) {
       try { await browser.close(); } catch (e) {}
     }
@@ -686,8 +609,24 @@ async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsi
     const phoneMatch = fullHtml.match(/(\+?\d[0-9\s\-]{8,}\d)/);
     const emailMatch = fullHtml.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
 
+    // Build plain sections fallback
+    const sections: any[] = [];
+    h1s.forEach(h => {
+      sections.push({ name: 'General', heading: h, paragraphs: [], lists: [], buttons: [], tables: [], forms: [] });
+    });
+    $('p').each((_, el) => {
+      const txt = $(el).text().trim();
+      if (txt.length > 20) {
+        if (sections.length === 0) {
+          sections.push({ name: 'Hero', heading: '', paragraphs: [txt], lists: [], buttons: [], tables: [], forms: [] });
+        } else {
+          sections[sections.length - 1].paragraphs.push(txt);
+        }
+      }
+    });
+
     const pagesData: PageScrapeData[] = [{
-      name: 'Homepage',
+      name: 'Home',
       url: cleanUrl,
       path: '/',
       status: 200,
@@ -707,15 +646,19 @@ async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsi
         addresses: [],
         socials: { instagram: 'Missing', linkedin: 'Missing', facebook: 'Missing', twitter: 'Missing' }
       },
-      visibleText: $('body').text().replace(/\s+/g, ' ').trim()
+      visibleText: $('body').text().replace(/\s+/g, ' ').trim(),
+      structuredContent: {
+        name: 'Home',
+        sections
+      }
     }];
 
     return {
       baseUrl: cleanUrl,
       siteTitle,
       pages: pagesData,
-      discoveredPageNames: ['Homepage'],
-      allButtons: buttonsData.map(b => ({ page: 'Homepage', ...b })),
+      discoveredPageNames: ['Home'],
+      allButtons: buttonsData.map(b => ({ page: 'Home', ...b })),
       linkCounters: { working: buttonsData.length, broken: 0, missing: 0 },
       globalContactInfo: {
         phone: { present: !!phoneMatch, value: phoneMatch ? phoneMatch[1] : undefined },
