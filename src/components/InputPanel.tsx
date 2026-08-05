@@ -51,12 +51,34 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   return (
     <div className="input-panel-container">
       {/* ERROR BANNER DISPLAY */}
+      {/* ERROR BANNER DISPLAY */}
       {error && (
         <div className="error-banner">
           <ShieldAlert size={22} className="error-icon" />
-          <div className="error-content">
-            <h4>Validation Failed</h4>
-            <p>{error}</p>
+          <div className="error-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h4>Validation Failed / Crawl Interrupted</h4>
+              <p>{error}</p>
+            </div>
+            <button
+              type="button"
+              className="run-qa-btn"
+              onClick={onRunValidation}
+              style={{
+                padding: '8px 16px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                height: 'auto',
+                width: 'auto',
+                margin: 0,
+                background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)'
+              }}
+            >
+              <RefreshCw size={14} style={{ marginRight: '6px' }} />
+              Retry Inspection
+            </button>
           </div>
         </div>
       )}
@@ -135,7 +157,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                 <p>Wix Preview URL, Live Website, WordPress, Shopify, or Webflow</p>
               </div>
             </div>
-            <span className="live-pill puppeteer">Puppeteer Multi-Page Scraper</span>
+            <span className="live-pill puppeteer">Playwright Dynamic Scraper</span>
           </div>
 
           <div className="card-body">
@@ -160,11 +182,28 @@ export const InputPanel: React.FC<InputPanelProps> = ({
       {/* ACTION & REAL-TIME PROGRESS BAR */}
       <div className="action-bar-container">
         {isAnalyzing ? (
-          <div className="loading-progress-box">
-            <RefreshCw className="spin" size={24} />
-            <div className="progress-text-group">
-              <span className="progress-title">{analysisStep || 'Inspecting Website...'}</span>
-              <span className="progress-sub">Extracting document file content & auditing live website pages</span>
+          <div className="loading-progress-box" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px', width: '100%', padding: '16px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RefreshCw className="spin" size={20} style={{ color: 'var(--accent-cyan)' }} />
+              <span className="progress-title" style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>
+                {analysisStep || 'Inspecting Website...'}
+              </span>
+            </div>
+            <span className="progress-sub" style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+              Playwright is crawling pages and running deterministic matching audit...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                height: '100%',
+                width: analysisStep.includes('1.') ? '30%' : analysisStep.includes('2.') ? '65%' : '90%',
+                background: 'linear-gradient(90deg, var(--accent-cyan), #c084fc)',
+                boxShadow: '0 0 10px var(--accent-cyan)',
+                borderRadius: '3px',
+                transition: 'width 0.4s ease'
+              }} />
             </div>
           </div>
         ) : (
