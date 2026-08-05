@@ -76,7 +76,22 @@ export function normalizeText(text: string): string {
  */
 export function parseDocumentContent(rawContent: string): ParsedItem[] {
   const items: ParsedItem[] = [];
-  const lines = rawContent.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const sanitizedContent = rawContent
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(line => {
+      if (!line) return false;
+      if (line.startsWith('%PDF')) return false;
+      if (line.includes('Skia/PDF') || line.includes('Google Docs Renderer')) return false;
+      if (line.match(/^%[^\w\s]*/) || line.match(/^%\uFFFD+/)) return false;
+      if (line.startsWith('/Producer') || line.startsWith('/CreationDate') || line.startsWith('/ModDate')) return false;
+      if (line.match(/^\/[A-Z][a-zA-Z0-9]*\b/)) return false;
+      if (line.startsWith('<<') || line.endsWith('>>') || line.includes('endstream') || line.includes('endobj')) return false;
+      return true;
+    })
+    .join('\n');
+
+  const lines = sanitizedContent.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
   let currentSection: SectionType = 'Hero';
   let itemIdCounter = 1;
