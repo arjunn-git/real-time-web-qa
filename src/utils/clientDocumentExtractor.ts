@@ -28,6 +28,59 @@ export function cleanPdfBinaryNoise(text: string): string {
     .trim();
 }
 
+/**
+ * Extracts real text strings from PDF Tj and TJ text stream operators
+ */
+export function extractPdfTextFromRawArrayBuffer(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let str = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    str += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+
+  const textChunks: string[] = [];
+
+  // Extract text inside (string) Tj or (string) TJ
+  const tjRegex = /\(([^)]+)\)\s*T[jJ]/g;
+  let match;
+  while ((match = tjRegex.exec(str)) !== null) {
+    const rawSnippet = match[1]
+      .replace(/\\\( /g, '(')
+      .replace(/\\\)/g, ')')
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '')
+      .replace(/\\t/g, ' ')
+      .trim();
+    if (rawSnippet && rawSnippet.length > 1 && !rawSnippet.startsWith('/')) {
+      textChunks.push(rawSnippet);
+    }
+  }
+
+  // Extract text inside array TJ: [ (text1) 12 (text2) ] TJ
+  const arrayTjRegex = /\[\s*((?:\([^)]*\)\s*|-?\d+\s*)+)\]\s*TJ/gi;
+  while ((match = arrayTjRegex.exec(str)) !== null) {
+    const innerArray = match[1];
+    const subMatches = innerArray.match(/\(([^)]+)\)/g);
+    if (subMatches) {
+      const combined = subMatches
+        .map(m => m.slice(1, -1))
+        .join('')
+        .trim();
+      if (combined && combined.length > 1) {
+        textChunks.push(combined);
+      }
+    }
+  }
+
+  if (textChunks.length > 0) {
+    return cleanPdfBinaryNoise(textChunks.join('\n'));
+  }
+
+  return cleanPdfBinaryNoise(str);
+}
+
 export async function extractTextFromClientFile(file: File): Promise<{ title: string; rawText: string }> {
   const name = file.name;
   const ext = name.split('.').pop()?.toLowerCase() || '';
@@ -37,11 +90,23 @@ export async function extractTextFromClientFile(file: File): Promise<{ title: st
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
       const cleaned = cleanPdfBinaryNoise(result.value || '');
-      if (cleaned && cleaned.length > 10) {
+      if (cleaned && cleaned.length > 5) {
         return { title: name, rawText: cleaned };
       }
     } catch (e) {
       console.warn('Client mammoth extraction failed, falling back to text reader:', e);
+    }
+  }
+
+  if (ext === 'pdf') {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const extractedPdfText = extractPdfTextFromRawArrayBuffer(arrayBuffer);
+      if (extractedPdfText && extractedPdfText.length > 5) {
+        return { title: name, rawText: extractedPdfText };
+      }
+    } catch (e) {
+      console.warn('Client PDF ArrayBuffer extraction failed:', e);
     }
   }
 

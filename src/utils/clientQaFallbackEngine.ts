@@ -48,10 +48,10 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
       section: 'Contact',
       component: 'Contact Info',
       item: 'Phone Number',
-      expected: 'Phone Number Specification',
+      expected: 'Official Contact Phone Number',
       found: 'None',
-      missingInformation: 'No explicit phone number found in uploaded brief',
-      recommendation: 'Add the missing phone number exactly as written in the uploaded document.'
+      missingInformation: 'No phone number specification found in document or live website',
+      recommendation: 'Add the official phone number exactly as specified in the brief.'
     });
     missingContentCount++;
     contactIssuesCount++;
@@ -75,10 +75,10 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
       section: 'Contact',
       component: 'Contact Info',
       item: 'Email Address',
-      expected: 'Email Address Specification',
+      expected: 'Official Contact Email Address',
       found: 'None',
-      missingInformation: 'No explicit email address found in uploaded brief',
-      recommendation: 'Add the missing email address exactly as written in the uploaded document.'
+      missingInformation: 'No email address specification found in document or live website',
+      recommendation: 'Add the official email address exactly as specified in the brief.'
     });
     missingContentCount++;
     contactIssuesCount++;
