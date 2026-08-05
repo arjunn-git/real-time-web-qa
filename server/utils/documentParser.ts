@@ -196,9 +196,8 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
 
     lines.forEach((line) => {
       // 1. Detect Headings
-      const isHeadingMatch = line.match(/^#{1,6}\s*(.+)$/) || 
-                             line.match(/^\[(.+)\]$/) ||
-                             (line.length < 50 && !line.match(/[.!?]$/) && line.toUpperCase() === line);
+      const headingMatch = line.match(/^#{1,6}\s*(.+)$/) || line.match(/^\[(.+)\]$/);
+      const isHeadingMatch = headingMatch || (line.length < 50 && !line.match(/[.!?]$/) && line.toUpperCase() === line);
 
       if (isHeadingMatch) {
         // Commit current section
@@ -211,7 +210,7 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
           page.sections.push({ ...currentSection });
         }
 
-        const headingVal = isHeadingMatch[1] || line;
+        const headingVal = headingMatch ? headingMatch[1] : line;
         currentSection = {
           name: classifySection(headingVal),
           heading: headingVal,

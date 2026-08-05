@@ -1,6 +1,6 @@
 import type { FullWebsiteScrapeResult, PageScrapeData } from './websiteScraper';
 import type { GoogleDocResult } from './googleDocFetcher';
-import { arePhonesEquivalent, areEmailsEquivalent, calculateTextSimilarity } from '../utils/contentNormalizer';
+import { parseDocumentToHierarchy } from '../utils/documentParser';
 
 export interface PageValidationResult {
   name: string;
@@ -128,111 +128,6 @@ export interface DeliveryQaReport {
   formsReport: FormValidationSummary;
 }
 
-/**
- * Runs pre-client delivery QA checks dynamically with strict 2-status (✅ Correct / ❌ Missing) alignment
- */
-export function runDeliveryQaEngine(
-  docData: GoogleDocResult,
-  siteData: FullWebsiteScrapeResult
-): DeliveryQaReport {
-  const docText = docData.rawText;
-
-  // 1. Page-Wise Validation Report
-  const expectedStandardPages = ['Home', 'About', 'Services', 'Contact', 'Privacy Policy', 'Terms'];
-  const foundPagesMap = new Map<string, PageScrapeData>();
-  siteData.pages.forEach(p => foundPagesMap.set(p.name, p));
-
-  const pageWiseReport: PageValidationResult[] = [];
-  let totalIssuesCount = 0;
-  let missingContentCount = 0;
-  let brokenLinksCount = 0;
-  let missingButtonsCount = 0;
-  let seoIssuesCount = 0;
-  let contactIssuesCount = 0;
-  let formIssuesCount = 0;
-
-  const allPageNames = Array.from(new Set([...expectedStandardPages, ...siteData.discoveredPageNames]));
-
-  for (const pageName of allPageNames) {
-    const pageData = foundPagesMap.get(pageName);
-
-    if (!pageData) {
-      if (pageName === 'Privacy Policy' || pageName === 'Terms' || pageName === 'Contact') {
-        pageWiseReport.push({
-          name: pageName,
-          url: '',
-          status: 'Missing Page',
-          missingContent: [`Entire ${pageName} page is missing from site navigation`],
-          missingSections: [`${pageName} Section`],
-          additionalContent: [],
-          passedChecks: []
-        });
-        totalIssuesCount++;
-      }
-      continue;
-    }
-
-    const missingContent: string[] = [];
-    const missingSections: string[] = [];
-    const passedChecks: string[] = [];
-
-    // Check H1
-    if (pageData.h1.length === 0) {
-      missingContent.push('H1 Heading Tag');
-      seoIssuesCount++;
-    } else {
-      passedChecks.push('H1 Heading Present');
-    }
-
-    // Check Meta Title
-    if (!pageData.metaTitle || pageData.metaTitle.length < 3) {
-      missingContent.push('Meta Title');
-      seoIssuesCount++;
-    } else {
-      passedChecks.push('SEO Meta Title Present');
-    }
-
-    // Check Meta Description
-    if (!pageData.metaDescription) {
-      missingContent.push('Meta Description');
-      seoIssuesCount++;
-    }
-
-    // Check Buttons
-    const invalidButtons = pageData.buttons.filter(b => b.isValid === false);
-    if (invalidButtons.length > 0) {
-      missingContent.push(`${invalidButtons.length} CTA Button(s) missing action`);
-      missingButtonsCount += invalidButtons.length;
-    } else if (pageData.buttons.length > 0) {
-      passedChecks.push('Buttons Action Assigned');
-    }
-
-    // Check Intent Links Rule (Minimum 2 Intent Links per page)
-    const validIntentLinks = pageData.buttons.filter(b => b.isValid !== false).length + pageData.links.filter(l => !l.isMissing).length;
-    if (validIntentLinks < 2) {
-      missingContent.push(`Insufficient Intent Links (${validIntentLinks} found, minimum 2 required per page)`);
-      brokenLinksCount += (2 - validIntentLinks);
-    } else {
-      passedChecks.push(`Intent Links Verified (${validIntentLinks} present)`);
-    }
-
-    const isPassed = missingContent.length === 0;
-    pageWiseReport.push({
-      name: pageName,
-      url: pageData.url,
-      status: isPassed ? 'Passed' : 'Requires Changes',
-      missingContent,
-      missingSections,
-      additionalContent: [],
-      passedChecks
-    });
-
-    if (!isPassed) totalIssuesCount += missingContent.length;
-  }
-
-  // 2. Strict Content Validation (Page -> Section -> Component -> Status)
-  const contentDiscrepancies: ContentDiscrepancyResult[] = [];
-
 function cleanAndNormalize(text: string): string {
   if (!text) return '';
   return text
@@ -261,437 +156,258 @@ function findMatchingSection(docSectionName: string, siteSections: any[]): any |
   });
 }
 
-  if (docData.structuredContent && docData.structuredContent.pages && docData.structuredContent.pages.length > 0) {
-    const sc = docData.structuredContent;
-    sc.pages.forEach((docPage: any) => {
-      const pageName = docPage.name || 'Home';
-      const sitePage = findMatchingPage(pageName, siteData.pages);
+/**
+ * Runs deterministic pre-client delivery QA matching checks comparing page-by-page and section-by-section.
+ */
+export function runDeliveryQaEngine(
+  docData: GoogleDocResult,
+  siteData: FullWebsiteScrapeResult
+): DeliveryQaReport {
+  // Guarantee structuredContent is populated
+  if (!docData.structuredContent || !docData.structuredContent.pages || docData.structuredContent.pages.length === 0) {
+    try {
+      docData.structuredContent = parseDocumentToHierarchy(docData.rawText);
+    } catch (e) {
+      console.warn('Failed to dynamically structure document text:', e);
+    }
+  }
 
-      if (!sitePage) {
-        // Report Entire Page as "Unable to Match"
+  const contentDiscrepancies: ContentDiscrepancyResult[] = [];
+  const foundPagesMap = new Map<string, PageScrapeData>();
+  siteData.pages.forEach(p => foundPagesMap.set(p.name, p));
+
+  let missingContentCount = 0;
+  let brokenLinksCount = 0;
+  let missingButtonsCount = 0;
+  let seoIssuesCount = 0;
+  let contactIssuesCount = 0;
+  let formIssuesCount = 0;
+
+  const sc = docData.structuredContent || { pages: [] };
+
+  sc.pages.forEach((docPage: any) => {
+    const pageName = docPage.name || 'Home';
+    const sitePage = findMatchingPage(pageName, siteData.pages);
+
+    // 1. Validate Page Exists
+    if (!sitePage) {
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '❌ Missing',
+        pageName,
+        'All Sections',
+        'Paragraph',
+        `Page Exists: ${pageName}`,
+        `Page "${pageName}" should be present on website`,
+        'Unable to Match',
+        `Page "${pageName}" is missing from website preview navigation.`,
+        `Create the page "${pageName}" in Wix/CMS.`
+      );
+      missingContentCount++;
+
+      // Mark all child elements as missing
+      docPage.sections.forEach((docSec: any) => {
+        const secName = docSec.name || 'Hero';
         contentDiscrepancyAdd(
           contentDiscrepancies,
           '❌ Missing',
           pageName,
-          'All Sections',
-          'Paragraph',
-          `Page: ${pageName}`,
-          `Page ${pageName} content specifications`,
+          secName,
+          'Heading',
+          `Section Exists: ${secName}`,
+          `Section "${secName}" exists on page`,
           'Unable to Match',
-          `The page "${pageName}" is missing or inaccessible on the website preview.`,
-          `Create the page "${pageName}" in Wix/CMS and add the matching content.`
+          `Unable to validate section "${secName}" because page "${pageName}" is missing.`,
+          `Create the page first, then create section "${secName}".`
+        );
+      });
+      return;
+    }
+
+    // Page exists check passed
+    contentDiscrepancyAdd(
+      contentDiscrepancies,
+      '✅ Correct',
+      pageName,
+      'Navigation',
+      'Paragraph',
+      `Page Exists: ${pageName}`,
+      `Page "${pageName}" exists`,
+      `Page found: ${sitePage.url}`
+    );
+
+    const siteSections = sitePage.structuredContent?.sections || [];
+
+    docPage.sections.forEach((docSec: any) => {
+      const secName = docSec.name || 'Hero';
+      const siteSec = findMatchingSection(secName, siteSections);
+
+      // 2. Validate Section Exists
+      if (!siteSec) {
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '❌ Missing',
+          pageName,
+          secName,
+          'Heading',
+          `Section Exists: ${secName}`,
+          `Section "${secName}" exists on page`,
+          'Unable to Match',
+          `Section "${secName}" is missing on the "${pageName}" page.`,
+          `Create the section "${secName}" on page "${pageName}".`
         );
         missingContentCount++;
         return;
       }
 
-      // Match Sections
-      const siteSections = sitePage.structuredContent?.sections || [];
-      docPage.sections.forEach((docSec: any) => {
-        const secName = docSec.name || 'Hero';
-        const siteSec = findMatchingSection(secName, siteSections);
+      // Section exists check passed
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '✅ Correct',
+        pageName,
+        secName,
+        'Heading',
+        `Section Exists: ${secName}`,
+        `Section "${secName}" exists`,
+        `Section matched: ${siteSec.name}`
+      );
 
-        if (!siteSec) {
-          // Report Section as "Unable to Match"
-          contentDiscrepancyAdd(
-            contentDiscrepancies,
-            '❌ Missing',
-            pageName,
-            secName,
-            'Heading',
-            `Section: ${secName}`,
-            `Section ${secName} components`,
-            'Unable to Match',
-            `Section "${secName}" could not be matched on the page.`,
-            `Create the section "${secName}" on page "${pageName}".`
-          );
-          missingContentCount++;
-          return;
-        }
+      // 3. Match Heading
+      if (docSec.heading) {
+        const expH = docSec.heading;
+        const foundH = siteSec.heading || '';
+        const match = cleanAndNormalize(foundH).includes(cleanAndNormalize(expH)) ||
+                      cleanAndNormalize(expH).includes(cleanAndNormalize(foundH));
 
-        // Compare components in the matched section:
-        
-        // 1. Heading
-        if (docSec.heading) {
-          const expH = docSec.heading;
-          const foundH = siteSec.heading || '';
-          const match = cleanAndNormalize(foundH).includes(cleanAndNormalize(expH)) ||
-                        cleanAndNormalize(expH).includes(cleanAndNormalize(foundH));
-          
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          match ? '✅ Correct' : '❌ Missing',
+          pageName,
+          secName,
+          'Heading',
+          `Heading: ${expH.substring(0, 45)}`,
+          expH,
+          match ? foundH : (foundH || 'None')
+        );
+        if (!match) missingContentCount++;
+      }
+
+      // 4. Match Paragraphs
+      if (docSec.paragraphs && docSec.paragraphs.length > 0) {
+        docSec.paragraphs.forEach((para: string, idx: number) => {
+          const cleanDocPara = cleanAndNormalize(para);
+          const match = siteSec.paragraphs && siteSec.paragraphs.some((sitePara: string) => {
+            const cleanSitePara = cleanAndNormalize(sitePara);
+            return cleanSitePara.includes(cleanDocPara) || cleanDocPara.includes(cleanSitePara);
+          });
+
           contentDiscrepancyAdd(
             contentDiscrepancies,
             match ? '✅ Correct' : '❌ Missing',
             pageName,
             secName,
-            'Heading',
-            `Heading: ${expH.substring(0, 45)}`,
-            expH,
-            match ? foundH : (foundH || 'None')
-          );
-          if (!match) missingContentCount++;
-        }
-
-        // 2. Paragraphs
-        if (docSec.paragraphs && docSec.paragraphs.length > 0) {
-          docSec.paragraphs.forEach((para: string, idx: number) => {
-            const cleanDocPara = cleanAndNormalize(para);
-            const match = siteSec.paragraphs.some((sitePara: string) => {
-              const cleanSitePara = cleanAndNormalize(sitePara);
-              return cleanSitePara.includes(cleanDocPara) || cleanDocPara.includes(cleanSitePara);
-            });
-
-            contentDiscrepancyAdd(
-              contentDiscrepancies,
-              match ? '✅ Correct' : '❌ Missing',
-              pageName,
-              secName,
-              'Paragraph',
-              `Paragraph ${idx + 1}`,
-              para.substring(0, 70) + (para.length > 70 ? '...' : ''),
-              match ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : 'None'
-            );
-            if (!match) missingContentCount++;
-          });
-        }
-
-        // 3. Lists
-        if (docSec.lists && docSec.lists.length > 0) {
-          docSec.lists.forEach((listVal: string, idx: number) => {
-            const cleanDocList = cleanAndNormalize(listVal);
-            const match = siteSec.lists.some((siteList: string) => {
-              const cleanSiteList = cleanAndNormalize(siteList);
-              return cleanSiteList.includes(cleanDocList) || cleanDocList.includes(cleanSiteList);
-            });
-
-            contentDiscrepancyAdd(
-              contentDiscrepancies,
-              match ? '✅ Correct' : '❌ Missing',
-              pageName,
-              secName,
-              'Lists',
-              `List Item ${idx + 1}`,
-              listVal.substring(0, 70) + (listVal.length > 70 ? '...' : ''),
-              match ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : 'None'
-            );
-            if (!match) missingContentCount++;
-          });
-        }
-
-        // 4. Buttons
-        if (docSec.buttons && docSec.buttons.length > 0) {
-          docSec.buttons.forEach((btn: string) => {
-            const cleanDocBtn = cleanAndNormalize(btn);
-            const match = siteSec.buttons.some((siteBtn: string) => {
-              return cleanAndNormalize(siteBtn).includes(cleanDocBtn);
-            });
-
-            contentDiscrepancyAdd(
-              contentDiscrepancies,
-              match ? '✅ Correct' : '❌ Missing',
-              pageName,
-              secName,
-              'Buttons',
-              `CTA Button: ${btn}`,
-              btn,
-              match ? btn : 'None'
-            );
-            if (!match) missingContentCount++;
-          });
-        }
-
-        // 5. Tables
-        if (docSec.tables && docSec.tables.length > 0) {
-          docSec.tables.forEach((table: string[][], idx: number) => {
-            let tableMatched = false;
-            if (siteSec.tables && siteSec.tables.length > 0) {
-              const expectedFlat = table.flat().map(c => cleanAndNormalize(c)).filter(Boolean);
-              
-              siteSec.tables.forEach((siteTable: string[][]) => {
-                const siteFlat = siteTable.flat().map(c => cleanAndNormalize(c)).filter(Boolean);
-                let overlap = 0;
-                expectedFlat.forEach(cell => {
-                  if (siteFlat.some(sc => sc.includes(cell) || cell.includes(sc))) overlap++;
-                });
-                const matchRatio = expectedFlat.length > 0 ? overlap / expectedFlat.length : 1;
-                if (matchRatio >= 0.7) tableMatched = true;
-              });
-            }
-
-            contentDiscrepancyAdd(
-              contentDiscrepancies,
-              tableMatched ? '✅ Correct' : '❌ Missing',
-              pageName,
-              secName,
-              'Tables',
-              `Table ${idx + 1} (${table.length} rows)`,
-              `Table structure with cells: ${table[0]?.slice(0, 3).join(' | ')}`,
-              tableMatched ? 'Table content verified in section' : 'None / Incomplete Table Content'
-            );
-            if (!tableMatched) missingContentCount++;
-          });
-        }
-
-        // 6. Forms
-        if (docSec.forms && docSec.forms.length > 0) {
-          docSec.forms.forEach((formVal: string) => {
-            const cleanDocForm = cleanAndNormalize(formVal);
-            const match = siteSec.forms && siteSec.forms.some((siteForm: string) => {
-              return cleanAndNormalize(siteForm).includes(cleanDocForm);
-            });
-
-            contentDiscrepancyAdd(
-              contentDiscrepancies,
-              match ? '✅ Correct' : '❌ Missing',
-              pageName,
-              secName,
-              'Forms',
-              `Form Description`,
-              formVal,
-              match ? 'Form verified in section' : 'None'
-            );
-            if (!match) missingContentCount++;
-          });
-        }
-      });
-    });
-  } else {
-    // Check expected Phone
-    const docPhoneMatch = docText.match(/(\+?\d[0-9\s\-]{8,}\d)/);
-    const foundPhone = siteData.globalContactInfo.phone.value;
-
-    if (docPhoneMatch) {
-      const expectedPhone = docPhoneMatch[1];
-      if (!siteData.globalContactInfo.phone.present) {
-        contentDiscrepancyAdd(
-          contentDiscrepancies,
-          '❌ Missing',
-          'Home',
-          'Contact',
-          'Contact Info',
-          'Phone Number',
-          expectedPhone,
-          'None',
-          'Phone Number (+44 / Local format)',
-          'Add the missing phone number exactly as written in the uploaded document.'
-        );
-        missingContentCount++;
-        contactIssuesCount++;
-      } else if (foundPhone && arePhonesEquivalent(expectedPhone, foundPhone)) {
-        contentDiscrepancyAdd(
-          contentDiscrepancies,
-          '✅ Correct',
-          'Home',
-          'Contact',
-          'Contact Info',
-          'Phone Number',
-          expectedPhone,
-          foundPhone
-        );
-      } else {
-        contentDiscrepancyAdd(
-          contentDiscrepancies,
-          '❌ Missing',
-          'Home',
-          'Contact',
-          'Contact Info',
-          'Phone Number',
-          expectedPhone,
-          foundPhone || 'None',
-          `Phone number mismatch (Expected: ${expectedPhone}, Found: ${foundPhone || 'None'})`,
-          'Update phone number to match the exact uploaded document value.'
-        );
-        missingContentCount++;
-        contactIssuesCount++;
-      }
-    }
-
-    // Check expected Email
-    const docEmailMatch = docText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-    const foundEmail = siteData.globalContactInfo.email.value;
-
-    if (docEmailMatch) {
-      const expectedEmail = docEmailMatch[1];
-      if (!siteData.globalContactInfo.email.present) {
-        contentDiscrepancyAdd(
-          contentDiscrepancies,
-          '❌ Missing',
-          'Home',
-          'Contact',
-          'Contact Info',
-          'Email Address',
-          expectedEmail,
-          'None',
-          'Official Email Address',
-          'Add the missing email address exactly as written in the uploaded document.'
-        );
-        missingContentCount++;
-        contactIssuesCount++;
-      } else if (foundEmail && areEmailsEquivalent(expectedEmail, foundEmail)) {
-        contentDiscrepancyAdd(
-          contentDiscrepancies,
-          '✅ Correct',
-          'Home',
-          'Contact',
-          'Contact Info',
-          'Email Address',
-          expectedEmail,
-          foundEmail
-        );
-      } else {
-        contentDiscrepancyAdd(
-          contentDiscrepancies,
-          '❌ Missing',
-          'Home',
-          'Contact',
-          'Contact Info',
-          'Email Address',
-          expectedEmail,
-          foundEmail || 'None',
-          `Email address mismatch (Expected: ${expectedEmail}, Found: ${foundEmail || 'None'})`,
-          'Update email address to match the exact uploaded document value.'
-        );
-        missingContentCount++;
-        contactIssuesCount++;
-      }
-    }
-
-    // Compare CTAs from document specifications
-    const docCtaMatches = docText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order)\s+[A-Za-z0-9\s]{2,30}/gi);
-    if (docCtaMatches && docCtaMatches.length > 0) {
-      const uniqueDocCtas: string[] = Array.from(new Set(docCtaMatches.map((c: string) => c.trim()))).slice(0, 5);
-      uniqueDocCtas.forEach((cta: string) => {
-        const matchingBtn = siteData.allButtons.find(b => 
-          b.text.toLowerCase().includes(cta.toLowerCase()) || 
-          cta.toLowerCase().includes(b.text.toLowerCase())
-        );
-        if (matchingBtn) {
-          contentDiscrepancyAdd(
-            contentDiscrepancies,
-            '✅ Correct',
-            matchingBtn.page || 'Home',
-            'CTA',
-            'Buttons',
-            `CTA Button ("${cta}")`,
-            cta,
-            matchingBtn.text
-          );
-        } else {
-          contentDiscrepancyAdd(
-            contentDiscrepancies,
-            '❌ Missing',
-            'Home',
-            'CTA',
-            'Buttons',
-            `CTA Button ("${cta}")`,
-            cta,
-            'None',
-            `CTA Button "${cta}" is missing from website body content`,
-            'Add the missing CTA button exactly as written in the uploaded document.'
-          );
-          missingContentCount++;
-        }
-      });
-    }
-
-    // Compare Headings from document specifications
-    const docHeadings = docText.match(/^(#{1,4}|\[|\bHeading:\b)\s*(.+)$/gm);
-    if (docHeadings && docHeadings.length > 0) {
-      const uniqueHeadings = Array.from(new Set(docHeadings.map(h => h.replace(/^#{1,4}\s*|^\[|\]$|^\bHeading:\b\s*/gi, '').trim()))).filter(h => h.length > 3).slice(0, 5);
-      const allSiteH1s = siteData.pages.flatMap(p => p.h1).map(h => h.toLowerCase());
-      
-      uniqueHeadings.forEach(h => {
-        const siteHasHeading = allSiteH1s.some(sh => sh.includes(h.toLowerCase()) || h.toLowerCase().includes(sh));
-        if (siteHasHeading) {
-          contentDiscrepancyAdd(
-            contentDiscrepancies,
-            '✅ Correct',
-            'Home',
-            'Hero',
-            'Heading',
-            `Section Heading ("${h}")`,
-            h,
-            h
-          );
-        } else {
-          contentDiscrepancyAdd(
-            contentDiscrepancies,
-            '❌ Missing',
-            'Home',
-            'Hero',
-            'Heading',
-            `Section Heading ("${h}")`,
-            h,
-            'None',
-            `Section heading "${h}" is missing on website page`,
-            'Add the missing heading exactly as written in the uploaded document.'
-          );
-          missingContentCount++;
-        }
-      });
-    }
-
-    // Perform deep paragraph & sentence level audit
-    const docParagraphs = docText.split(/\r?\n/).map(p => p.trim()).filter(p => p.length > 25);
-    const allSiteVisibleText = siteData.pages.map(p => p.visibleText.toLowerCase()).join(' ');
-
-    if (docParagraphs.length > 0) {
-      const sampleParagraphs = docParagraphs.slice(0, 8);
-      sampleParagraphs.forEach((para, idx) => {
-        const paraLower = para.toLowerCase();
-        if (allSiteVisibleText.includes(paraLower)) {
-          contentDiscrepancyAdd(
-            contentDiscrepancies,
-            '✅ Correct',
-            'Home',
-            'About',
             'Paragraph',
             `Paragraph ${idx + 1}`,
-            para.substring(0, 70) + '...',
-            para.substring(0, 70) + '...'
+            para.substring(0, 70) + (para.length > 70 ? '...' : ''),
+            match ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : 'None'
           );
-        } else {
-          let bestMatchSnippet = '';
-          let bestSim = 0;
-          siteData.pages.forEach(p => {
-            const sim = calculateTextSimilarity(para, p.visibleText);
-            if (sim > bestSim) {
-              bestSim = sim;
-              bestMatchSnippet = p.visibleText.substring(0, 70) + '...';
-            }
+          if (!match) missingContentCount++;
+        });
+      }
+
+      // 5. Match Lists
+      if (docSec.lists && docSec.lists.length > 0) {
+        docSec.lists.forEach((listVal: string, idx: number) => {
+          const cleanDocList = cleanAndNormalize(listVal);
+          const match = siteSec.lists && siteSec.lists.some((siteList: string) => {
+            const cleanSiteList = cleanAndNormalize(siteList);
+            return cleanSiteList.includes(cleanDocList) || cleanDocList.includes(cleanSiteList);
           });
 
-          if (bestSim >= 0.9) {
-            contentDiscrepancyAdd(
-              contentDiscrepancies,
-              '✅ Correct',
-              'Home',
-              'About',
-              'Paragraph',
-              `Paragraph ${idx + 1}`,
-              para.substring(0, 70) + '...',
-              bestMatchSnippet
-            );
-          } else {
-            contentDiscrepancyAdd(
-              contentDiscrepancies,
-              '❌ Missing',
-              'Home',
-              'About',
-              'Paragraph',
-              `Paragraph ${idx + 1}`,
-              para.substring(0, 70) + '...',
-              bestMatchSnippet || 'None',
-              `Specific paragraph information missing or modified on website`,
-              'Add the missing paragraph information exactly as written in the uploaded document.'
-            );
-            missingContentCount++;
-          }
-        }
-      });
-    }
-  }
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            match ? '✅ Correct' : '❌ Missing',
+            pageName,
+            secName,
+            'Lists',
+            `List Item ${idx + 1}`,
+            listVal.substring(0, 70) + (listVal.length > 70 ? '...' : ''),
+            match ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : 'None'
+          );
+          if (!match) missingContentCount++;
+        });
+      }
 
-  // 3. Button Validation Summary
+      // 6. Match Buttons & Button Links
+      if (docSec.buttons && docSec.buttons.length > 0) {
+        docSec.buttons.forEach((btn: string) => {
+          const cleanDocBtn = cleanAndNormalize(btn);
+          const match = siteSec.buttons && siteSec.buttons.some((siteBtn: string) => {
+            return cleanAndNormalize(siteBtn).includes(cleanDocBtn);
+          });
+
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            match ? '✅ Correct' : '❌ Missing',
+            pageName,
+            secName,
+            'Buttons',
+            `CTA Button: ${btn}`,
+            btn,
+            match ? btn : 'None'
+          );
+          if (!match) missingContentCount++;
+        });
+      }
+
+      // 7. Match Forms
+      if (docSec.forms && docSec.forms.length > 0) {
+        docSec.forms.forEach((formVal: string) => {
+          const cleanDocForm = cleanAndNormalize(formVal);
+          const match = siteSec.forms && siteSec.forms.some((siteForm: string) => {
+            return cleanAndNormalize(siteForm).includes(cleanDocForm);
+          });
+
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            match ? '✅ Correct' : '❌ Missing',
+            pageName,
+            secName,
+            'Forms',
+            `Form Description`,
+            formVal,
+            match ? 'Form verified in section' : 'None'
+          );
+          if (!match) missingContentCount++;
+        });
+      }
+    });
+  });
+
+  // Calculate Page-Wise summary report
+  const pageWiseReport: PageValidationResult[] = [];
+  const allPageNames = Array.from(new Set(siteData.discoveredPageNames));
+  if (allPageNames.length === 0) allPageNames.push('Home');
+
+  allPageNames.forEach(pageName => {
+    const pageData = foundPagesMap.get(pageName);
+    if (!pageData) return;
+
+    const pageDiscrepancies = contentDiscrepancies.filter(d => d.page === pageName);
+    const missingItems = pageDiscrepancies.filter(d => d.type === '❌ Missing');
+    
+    pageWiseReport.push({
+      name: pageName,
+      url: pageData.url,
+      status: missingItems.length === 0 ? 'Passed' : 'Requires Changes',
+      missingContent: missingItems.map(m => m.item),
+      missingSections: Array.from(new Set(missingItems.map(m => m.section))),
+      additionalContent: [],
+      passedChecks: pageDiscrepancies.filter(d => d.type === '✅ Correct').map(d => d.item)
+    });
+  });
+
+  // Button Validation Summary
   const buttonItems: ButtonValidationItem[] = siteData.allButtons.map(b => ({
     name: b.text,
     page: b.page,
@@ -713,7 +429,7 @@ function findMatchingSection(docSectionName: string, siteSections: any[]): any |
     items: buttonItems
   };
 
-  // 4. Link Validation
+  // Link Validation Summary
   const linksReport: LinkValidationSummary = {
     workingCount: siteData.linkCounters.working,
     brokenCount: siteData.linkCounters.broken,
@@ -725,7 +441,7 @@ function findMatchingSection(docSectionName: string, siteSections: any[]): any |
     ]
   };
 
-  // 5. Contact Information Validation
+  // Contact Information Validation
   const contactInfoReport: ContactValidationSummary = {
     phone: {
       status: siteData.globalContactInfo.phone.present ? 'Present' : 'Missing',
@@ -748,7 +464,7 @@ function findMatchingSection(docSectionName: string, siteSections: any[]): any |
   if (contactInfoReport.phone.status === 'Missing') contactIssuesCount++;
   if (contactInfoReport.email.status === 'Missing') contactIssuesCount++;
 
-  // 6. SEO Quick Check
+  // SEO Quick Check
   let anyUnableToValidate = false;
   let allTitlePassed = true;
   let allDescPassed = true;
@@ -797,7 +513,7 @@ function findMatchingSection(docSectionName: string, siteSections: any[]): any |
     details: seoDetails
   };
 
-  // 7. Form Validation
+  // Form Validation
   const hasContactForm = siteData.pages.some(p => p.forms.length > 0);
   const formsReport: FormValidationSummary = {
     contactForm: hasContactForm ? 'Passed' : 'Missing',
@@ -807,14 +523,14 @@ function findMatchingSection(docSectionName: string, siteSections: any[]): any |
 
   if (!hasContactForm) formIssuesCount++;
 
-  // 8. Compute Summary Metrics (Deterministic Page, Section, Component counts)
+  // Compute Summary Metrics
   const totalCorrect = contentDiscrepancies.filter(d => d.type === '✅ Correct').length;
   const totalMissing = contentDiscrepancies.filter(d => d.type === '❌ Missing').length;
   const totalPagesChecked = allPageNames.length;
-  const totalSectionsChecked = totalPagesChecked * 4; // Hero, About, Services, Footer
+  const totalSectionsChecked = totalPagesChecked * 4;
   const totalComponentsChecked = contentDiscrepancies.length;
 
-  totalIssuesCount = totalMissing + brokenLinksCount + missingButtonsCount + seoIssuesCount + contactIssuesCount + formIssuesCount;
+  const totalIssuesCount = totalMissing + brokenLinksCount + missingButtonsCount + seoIssuesCount + contactIssuesCount + formIssuesCount;
 
   let websiteDeliveryStatus: 'READY FOR DELIVERY' | 'MINOR FIXES REQUIRED' | 'MAJOR ISSUES FOUND' = 'READY FOR DELIVERY';
 
@@ -873,6 +589,6 @@ function contentDiscrepancyAdd(
     expected,
     found,
     missingInformation,
-    recommendation: recommendation || (type === '❌ Missing' ? 'Add the missing information exactly as written in the uploaded document.' : undefined)
+    recommendation: recommendation || (type === '❌ Missing' ? `Add the missing ${component.toLowerCase()} to ${section} section on page ${page}.` : undefined)
   });
 }
