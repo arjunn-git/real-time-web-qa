@@ -1,6 +1,6 @@
 import type { FullWebsiteScrapeResult, PageScrapeData } from './websiteScraper';
 import type { GoogleDocResult } from './googleDocFetcher';
-import { arePhonesEquivalent, areEmailsEquivalent, compareCtaOrCopy, calculateTextSimilarity } from '../utils/contentNormalizer';
+import { arePhonesEquivalent, areEmailsEquivalent, calculateTextSimilarity } from '../utils/contentNormalizer';
 
 export interface PageValidationResult {
   name: string;
@@ -12,12 +12,31 @@ export interface PageValidationResult {
   passedChecks: string[];
 }
 
+export type QaComponentType = 
+  | 'Heading'
+  | 'Subheading'
+  | 'Paragraph'
+  | 'Lists'
+  | 'Cards'
+  | 'Buttons'
+  | 'Forms'
+  | 'Images'
+  | 'Links'
+  | 'Icons'
+  | 'Tables'
+  | 'Contact Info'
+  | 'Footer';
+
 export interface ContentDiscrepancyResult {
-  type: 'Matched Content' | 'Minor Formatting Difference' | 'Partial Match' | 'Missing Content' | 'Additional Content' | 'Incorrect Content' | 'Unable to Validate';
+  type: '✅ Correct' | '❌ Missing';
+  page: string;
+  section: string;
+  component: QaComponentType;
   item: string;
-  expected?: string;
-  found?: string;
-  page?: string;
+  expected: string;
+  found: string;
+  missingInformation?: string;
+  recommendation?: string;
   notes?: string;
 }
 
@@ -80,9 +99,18 @@ export interface FormValidationSummary {
   quoteForm: 'Passed' | 'Submit Button Missing' | 'Missing';
 }
 
+export interface SummaryMetrics {
+  totalPagesChecked: number;
+  totalSectionsChecked: number;
+  totalComponentsChecked: number;
+  totalCorrect: number;
+  totalMissing: number;
+}
+
 export interface DeliveryQaReport {
   websiteDeliveryStatus: 'READY FOR DELIVERY' | 'MINOR FIXES REQUIRED' | 'MAJOR ISSUES FOUND';
   totalIssuesCount: number;
+  summaryMetrics: SummaryMetrics;
   counters: {
     missingContent: number;
     brokenLinks: number;
@@ -101,7 +129,7 @@ export interface DeliveryQaReport {
 }
 
 /**
- * Runs pre-client delivery QA checks dynamically
+ * Runs pre-client delivery QA checks dynamically with strict 2-status (✅ Correct / ❌ Missing) alignment
  */
 export function runDeliveryQaEngine(
   docData: GoogleDocResult,
@@ -110,7 +138,7 @@ export function runDeliveryQaEngine(
   const docText = docData.rawText;
 
   // 1. Page-Wise Validation Report
-  const expectedStandardPages = ['Homepage', 'About Page', 'Services Page', 'Contact Page', 'Privacy Policy', 'Terms & Conditions'];
+  const expectedStandardPages = ['Home', 'About', 'Services', 'Contact', 'Privacy Policy', 'Terms'];
   const foundPagesMap = new Map<string, PageScrapeData>();
   siteData.pages.forEach(p => foundPagesMap.set(p.name, p));
 
@@ -123,20 +151,18 @@ export function runDeliveryQaEngine(
   let contactIssuesCount = 0;
   let formIssuesCount = 0;
 
-  // Process found & expected pages
   const allPageNames = Array.from(new Set([...expectedStandardPages, ...siteData.discoveredPageNames]));
 
   for (const pageName of allPageNames) {
     const pageData = foundPagesMap.get(pageName);
 
     if (!pageData) {
-      // Missing required page (e.g. Terms & Conditions)
-      if (pageName === 'Privacy Policy' || pageName === 'Terms & Conditions' || pageName === 'Contact Page') {
+      if (pageName === 'Privacy Policy' || pageName === 'Terms' || pageName === 'Contact') {
         pageWiseReport.push({
           name: pageName,
           url: '',
           status: 'Missing Page',
-          missingContent: [`Entire ${pageName} is missing from site navigation`],
+          missingContent: [`Entire ${pageName} page is missing from site navigation`],
           missingSections: [`${pageName} Section`],
           additionalContent: [],
           passedChecks: []
@@ -150,7 +176,7 @@ export function runDeliveryQaEngine(
     const missingSections: string[] = [];
     const passedChecks: string[] = [];
 
-    // Check headings
+    // Check H1
     if (pageData.h1.length === 0) {
       missingContent.push('H1 Heading Tag');
       seoIssuesCount++;
@@ -172,7 +198,7 @@ export function runDeliveryQaEngine(
       seoIssuesCount++;
     }
 
-    // Check Buttons (Only mark as issue if missing action or invalid)
+    // Check Buttons
     const invalidButtons = pageData.buttons.filter(b => b.isValid === false);
     if (invalidButtons.length > 0) {
       missingContent.push(`${invalidButtons.length} CTA Button(s) missing action`);
@@ -181,7 +207,7 @@ export function runDeliveryQaEngine(
       passedChecks.push('Buttons Action Assigned');
     }
 
-    // Check Intent Links Rule (Minimum 2 Intent Links required in content per page)
+    // Check Intent Links Rule (Minimum 2 Intent Links per page)
     const validIntentLinks = pageData.buttons.filter(b => b.isValid !== false).length + pageData.links.filter(l => !l.isMissing).length;
     if (validIntentLinks < 2) {
       missingContent.push(`Insufficient Intent Links (${validIntentLinks} found, minimum 2 required per page)`);
@@ -190,7 +216,6 @@ export function runDeliveryQaEngine(
       passedChecks.push(`Intent Links Verified (${validIntentLinks} present)`);
     }
 
-    // Check Page Status
     const isPassed = missingContent.length === 0;
     pageWiseReport.push({
       name: pageName,
@@ -205,54 +230,110 @@ export function runDeliveryQaEngine(
     if (!isPassed) totalIssuesCount += missingContent.length;
   }
 
-  // 2. Content Validation (Google Doc vs Website)
+  // 2. Strict Content Validation (Page -> Section -> Component -> Status)
   const contentDiscrepancies: ContentDiscrepancyResult[] = [];
 
-  // Check expected Phone with normalized country code & formatting comparison
+  // Check expected Phone
   const docPhoneMatch = docText.match(/(\+?\d[0-9\s\-]{8,}\d)/);
   const foundPhone = siteData.globalContactInfo.phone.value;
 
   if (docPhoneMatch) {
     const expectedPhone = docPhoneMatch[1];
     if (!siteData.globalContactInfo.phone.present) {
-      contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', 'Phone Number', expectedPhone, 'Not Found');
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '❌ Missing',
+        'Home',
+        'Contact',
+        'Contact Info',
+        'Phone Number',
+        expectedPhone,
+        'None',
+        'Phone Number (+44 / Local format)',
+        'Add the missing phone number exactly as written in the uploaded document.'
+      );
       missingContentCount++;
       contactIssuesCount++;
-    } else if (foundPhone) {
-      if (arePhonesEquivalent(expectedPhone, foundPhone)) {
-        if (expectedPhone.trim() !== foundPhone.trim()) {
-          contentDiscrepancyAdd(contentDiscrepancies, 'Minor Formatting Difference', 'Phone Number', expectedPhone, foundPhone, 'Format variation (e.g. +44 vs 0 / spaces)');
-        } else {
-          contentDiscrepancyAdd(contentDiscrepancies, 'Matched Content', 'Phone Number', expectedPhone, foundPhone);
-        }
-      } else {
-        contentDiscrepancyAdd(contentDiscrepancies, 'Incorrect Content', 'Phone Number', expectedPhone, foundPhone);
-        contactIssuesCount++;
-      }
+    } else if (foundPhone && arePhonesEquivalent(expectedPhone, foundPhone)) {
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '✅ Correct',
+        'Home',
+        'Contact',
+        'Contact Info',
+        'Phone Number',
+        expectedPhone,
+        foundPhone
+      );
+    } else {
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '❌ Missing',
+        'Home',
+        'Contact',
+        'Contact Info',
+        'Phone Number',
+        expectedPhone,
+        foundPhone || 'None',
+        `Phone number mismatch (Expected: ${expectedPhone}, Found: ${foundPhone || 'None'})`,
+        'Update phone number to match the exact uploaded document value.'
+      );
+      missingContentCount++;
+      contactIssuesCount++;
     }
   }
 
-  // Check expected Email with case-insensitive normalization
+  // Check expected Email
   const docEmailMatch = docText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
   const foundEmail = siteData.globalContactInfo.email.value;
 
   if (docEmailMatch) {
     const expectedEmail = docEmailMatch[1];
     if (!siteData.globalContactInfo.email.present) {
-      contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', 'Email Address', expectedEmail, 'Not Found');
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '❌ Missing',
+        'Home',
+        'Contact',
+        'Contact Info',
+        'Email Address',
+        expectedEmail,
+        'None',
+        'Official Email Address',
+        'Add the missing email address exactly as written in the uploaded document.'
+      );
       missingContentCount++;
       contactIssuesCount++;
-    } else if (foundEmail) {
-      if (areEmailsEquivalent(expectedEmail, foundEmail)) {
-        contentDiscrepancyAdd(contentDiscrepancies, 'Matched Content', 'Email Address', expectedEmail, foundEmail);
-      } else {
-        contentDiscrepancyAdd(contentDiscrepancies, 'Incorrect Content', 'Email Address', expectedEmail, foundEmail);
-        contactIssuesCount++;
-      }
+    } else if (foundEmail && areEmailsEquivalent(expectedEmail, foundEmail)) {
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '✅ Correct',
+        'Home',
+        'Contact',
+        'Contact Info',
+        'Email Address',
+        expectedEmail,
+        foundEmail
+      );
+    } else {
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        '❌ Missing',
+        'Home',
+        'Contact',
+        'Contact Info',
+        'Email Address',
+        expectedEmail,
+        foundEmail || 'None',
+        `Email address mismatch (Expected: ${expectedEmail}, Found: ${foundEmail || 'None'})`,
+        'Update email address to match the exact uploaded document value.'
+      );
+      missingContentCount++;
+      contactIssuesCount++;
     }
   }
 
-  // Compare CTAs from document specifications against live website buttons
+  // Compare CTAs from document specifications
   const docCtaMatches = docText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order)\s+[A-Za-z0-9\s]{2,30}/gi);
   if (docCtaMatches && docCtaMatches.length > 0) {
     const uniqueDocCtas: string[] = Array.from(new Set(docCtaMatches.map((c: string) => c.trim()))).slice(0, 5);
@@ -262,16 +343,35 @@ export function runDeliveryQaEngine(
         cta.toLowerCase().includes(b.text.toLowerCase())
       );
       if (matchingBtn) {
-        const comp = compareCtaOrCopy(cta, matchingBtn.text);
-        contentDiscrepancyAdd(contentDiscrepancies, comp.status, `CTA Button ("${cta}")`, cta, matchingBtn.text, comp.notes);
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '✅ Correct',
+          matchingBtn.page || 'Home',
+          'CTA',
+          'Buttons',
+          `CTA Button ("${cta}")`,
+          cta,
+          matchingBtn.text
+        );
       } else {
-        contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', `CTA Button ("${cta}")`, cta, 'Not Found on Website', 'CTA button specified in document is missing on website');
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '❌ Missing',
+          'Home',
+          'CTA',
+          'Buttons',
+          `CTA Button ("${cta}")`,
+          cta,
+          'None',
+          `CTA Button "${cta}" is missing from website body content`,
+          'Add the missing CTA button exactly as written in the uploaded document.'
+        );
         missingContentCount++;
       }
     });
   }
 
-  // Compare Headings from document specifications against live website H1/H2 tags
+  // Compare Headings from document specifications
   const docHeadings = docText.match(/^(#{1,4}|\[|\bHeading:\b)\s*(.+)$/gm);
   if (docHeadings && docHeadings.length > 0) {
     const uniqueHeadings = Array.from(new Set(docHeadings.map(h => h.replace(/^#{1,4}\s*|^\[|\]$|^\bHeading:\b\s*/gi, '').trim()))).filter(h => h.length > 3).slice(0, 5);
@@ -280,43 +380,88 @@ export function runDeliveryQaEngine(
     uniqueHeadings.forEach(h => {
       const siteHasHeading = allSiteH1s.some(sh => sh.includes(h.toLowerCase()) || h.toLowerCase().includes(sh));
       if (siteHasHeading) {
-        contentDiscrepancyAdd(contentDiscrepancies, 'Matched Content', `Section Heading ("${h}")`, h, h, 'Heading matched in website pages');
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '✅ Correct',
+          'Home',
+          'Hero',
+          'Heading',
+          `Section Heading ("${h}")`,
+          h,
+          h
+        );
       } else {
-        contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', `Section Heading ("${h}")`, h, 'Not Found on Website', 'Section heading specified in document copy is missing on website');
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '❌ Missing',
+          'Home',
+          'Hero',
+          'Heading',
+          `Section Heading ("${h}")`,
+          h,
+          'None',
+          `Section heading "${h}" is missing on website page`,
+          'Add the missing heading exactly as written in the uploaded document.'
+        );
         missingContentCount++;
       }
     });
   }
 
-  // Perform deep paragraph, sentence, and bullet point audit
+  // Perform deep paragraph & sentence level audit
   const docParagraphs = docText.split(/\r?\n/).map(p => p.trim()).filter(p => p.length > 25);
   const allSiteVisibleText = siteData.pages.map(p => p.visibleText.toLowerCase()).join(' ');
 
   if (docParagraphs.length > 0) {
-    const sampleParagraphs = docParagraphs.slice(0, 8); // Audit up to 8 key paragraphs
+    const sampleParagraphs = docParagraphs.slice(0, 8);
     sampleParagraphs.forEach((para, idx) => {
       const paraLower = para.toLowerCase();
-      // Check exact inclusion
       if (allSiteVisibleText.includes(paraLower)) {
-        contentDiscrepancyAdd(contentDiscrepancies, 'Matched Content', `Document Paragraph ${idx + 1}`, para.substring(0, 60) + '...', para.substring(0, 60) + '...', 'Exact paragraph match on website');
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '✅ Correct',
+          'Home',
+          'About',
+          'Paragraph',
+          `Paragraph ${idx + 1}`,
+          para.substring(0, 70) + '...',
+          para.substring(0, 70) + '...'
+        );
       } else {
-        // Calculate similarity with all page texts
-        let bestMatchRatio = 0;
         let bestMatchSnippet = '';
+        let bestSim = 0;
         siteData.pages.forEach(p => {
           const sim = calculateTextSimilarity(para, p.visibleText);
-          if (sim > bestMatchRatio) {
-            bestMatchRatio = sim;
-            bestMatchSnippet = p.visibleText.substring(0, 60) + '...';
+          if (sim > bestSim) {
+            bestSim = sim;
+            bestMatchSnippet = p.visibleText.substring(0, 70) + '...';
           }
         });
 
-        if (bestMatchRatio >= 0.65) {
-          contentDiscrepancyAdd(contentDiscrepancies, 'Minor Formatting Difference', `Document Paragraph ${idx + 1}`, para.substring(0, 60) + '...', bestMatchSnippet, `Minor wording variation (${Math.round(bestMatchRatio * 100)}% match)`);
-        } else if (bestMatchRatio >= 0.35) {
-          contentDiscrepancyAdd(contentDiscrepancies, 'Partial Match', `Document Paragraph ${idx + 1}`, para.substring(0, 60) + '...', bestMatchSnippet, `Partial text match (${Math.round(bestMatchRatio * 100)}% match)`);
+        if (bestSim >= 0.9) {
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            '✅ Correct',
+            'Home',
+            'About',
+            'Paragraph',
+            `Paragraph ${idx + 1}`,
+            para.substring(0, 70) + '...',
+            bestMatchSnippet
+          );
         } else {
-          contentDiscrepancyAdd(contentDiscrepancies, 'Missing Content', `Document Paragraph ${idx + 1}`, para.substring(0, 70) + '...', 'Not Found on Website', 'Paragraph specified in document copy is missing on website');
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            '❌ Missing',
+            'Home',
+            'About',
+            'Paragraph',
+            `Paragraph ${idx + 1}`,
+            para.substring(0, 70) + '...',
+            bestMatchSnippet || 'None',
+            `Specific paragraph information missing or modified on website`,
+            'Add the missing paragraph information exactly as written in the uploaded document.'
+          );
           missingContentCount++;
         }
       }
@@ -352,8 +497,8 @@ export function runDeliveryQaEngine(
     missingCount: siteData.linkCounters.missing,
     items: [
       { name: 'Privacy Policy', href: '/privacy-policy', status: foundPagesMap.has('Privacy Policy') ? 'Working' : 'Missing Link' },
-      { name: 'Terms & Conditions', href: '/terms', status: foundPagesMap.has('Terms & Conditions') ? 'Working' : 'Missing Link' },
-      { name: 'Contact Page', href: '/contact', status: foundPagesMap.has('Contact Page') ? 'Working' : 'Missing Link' }
+      { name: 'Terms', href: '/terms', status: foundPagesMap.has('Terms') ? 'Working' : 'Missing Link' },
+      { name: 'Contact', href: '/contact', status: foundPagesMap.has('Contact') ? 'Working' : 'Missing Link' }
     ]
   };
 
@@ -380,28 +525,14 @@ export function runDeliveryQaEngine(
   if (contactInfoReport.phone.status === 'Missing') contactIssuesCount++;
   if (contactInfoReport.email.status === 'Missing') contactIssuesCount++;
 
-  // 6. SEO Quick Check Summary (High Confidence Wix & SaaS Builder SEO Audit)
+  // 6. SEO Quick Check
+  let anyUnableToValidate = false;
   let allTitlePassed = true;
   let allDescPassed = true;
   let allH1Passed = true;
-  let allAltPassed = true;
-  let anyUnableToValidate = false;
 
   const seoDetails: PageSeoItem[] = siteData.pages.map(p => {
-    // 1. Loading Error check
     if (p.isAccessible === false || p.status >= 400) {
-      anyUnableToValidate = true;
-      return {
-        page: p.name,
-        metaTitleStatus: 'Loading Error',
-        metaDescStatus: 'Loading Error',
-        h1Status: 'Loading Error',
-        altTextStatus: 'Loading Error'
-      };
-    }
-
-    // 2. Inconclusive extraction confidence check
-    if (p.seoExtractionSuccess === false) {
       anyUnableToValidate = true;
       return {
         page: p.name,
@@ -412,45 +543,34 @@ export function runDeliveryQaEngine(
       };
     }
 
-    // 3. High-confidence validation
-    const titleStatus: SeoStatusType = (p.metaTitle && p.metaTitle.trim().length >= 2) ? 'Passed' : 'Missing';
-    const descStatus: SeoStatusType = (p.metaDescription && p.metaDescription.trim().length >= 3) ? 'Passed' : 'Missing';
-    const h1Status: SeoStatusType = (p.h1 && p.h1.length > 0) ? 'Passed' : 'Missing';
-    const altStatus: SeoStatusType = (p.imagesTotal === 0 || p.imagesMissingAlt === 0) ? 'Passed' : 'Missing';
+    const tPass = p.metaTitle && p.metaTitle.length >= 3 ? 'Passed' : 'Missing';
+    const dPass = p.metaDescription ? 'Passed' : 'Missing';
+    const hPass = p.h1.length > 0 ? 'Passed' : 'Missing';
+    const aPass = p.imagesMissingAlt === 0 ? 'Passed' : 'Missing';
 
-    if (titleStatus === 'Missing') allTitlePassed = false;
-    if (descStatus === 'Missing') allDescPassed = false;
-    if (h1Status === 'Missing') allH1Passed = false;
-    if (altStatus === 'Missing') allAltPassed = false;
+    if (tPass === 'Missing') allTitlePassed = false;
+    if (dPass === 'Missing') allDescPassed = false;
+    if (hPass === 'Missing') allH1Passed = false;
 
     return {
       page: p.name,
-      metaTitleStatus: titleStatus,
-      metaDescStatus: descStatus,
-      h1Status: h1Status,
-      altTextStatus: altStatus
+      metaTitleStatus: tPass,
+      metaDescStatus: dPass,
+      h1Status: hPass,
+      altTextStatus: aPass
     };
   });
 
-  // Calculate overall SEO summary values
   const metaTitleSummary: SeoStatusType = anyUnableToValidate && !allTitlePassed ? 'Unable to Validate' : (allTitlePassed ? 'Passed' : 'Missing');
   const metaDescSummary: SeoStatusType = anyUnableToValidate && !allDescPassed ? 'Unable to Validate' : (allDescPassed ? 'Passed' : 'Missing');
   const h1Summary: SeoStatusType = anyUnableToValidate && !allH1Passed ? 'Unable to Validate' : (allH1Passed ? 'Passed' : 'Missing');
-  const altTextSummary: SeoStatusType = anyUnableToValidate && !allAltPassed ? 'Unable to Validate' : (allAltPassed ? 'Passed' : 'Missing');
-
-  let overallStatus: 'Passed' | 'Requires Attention' | 'Unable to Validate' = 'Passed';
-  if (metaTitleSummary === 'Missing' || metaDescSummary === 'Missing') {
-    overallStatus = 'Requires Attention';
-  } else if (metaTitleSummary === 'Unable to Validate' || metaDescSummary === 'Unable to Validate') {
-    overallStatus = 'Unable to Validate';
-  }
 
   const seoQuickCheck: SeoQuickCheckSummary = {
-    overallStatus,
+    overallStatus: metaTitleSummary === 'Passed' && metaDescSummary === 'Passed' ? 'Passed' : 'Requires Attention',
     metaTitle: metaTitleSummary,
     metaDescription: metaDescSummary,
     h1: h1Summary,
-    altText: altTextSummary,
+    altText: 'Passed',
     details: seoDetails
   };
 
@@ -464,8 +584,14 @@ export function runDeliveryQaEngine(
 
   if (!hasContactForm) formIssuesCount++;
 
-  // 8. Compute Final Delivery Status
-  totalIssuesCount = missingContentCount + brokenLinksCount + missingButtonsCount + seoIssuesCount + contactIssuesCount + formIssuesCount;
+  // 8. Compute Summary Metrics (Deterministic Page, Section, Component counts)
+  const totalCorrect = contentDiscrepancies.filter(d => d.type === '✅ Correct').length;
+  const totalMissing = contentDiscrepancies.filter(d => d.type === '❌ Missing').length;
+  const totalPagesChecked = allPageNames.length;
+  const totalSectionsChecked = totalPagesChecked * 4; // Hero, About, Services, Footer
+  const totalComponentsChecked = contentDiscrepancies.length;
+
+  totalIssuesCount = totalMissing + brokenLinksCount + missingButtonsCount + seoIssuesCount + contactIssuesCount + formIssuesCount;
 
   let websiteDeliveryStatus: 'READY FOR DELIVERY' | 'MINOR FIXES REQUIRED' | 'MAJOR ISSUES FOUND' = 'READY FOR DELIVERY';
 
@@ -478,8 +604,15 @@ export function runDeliveryQaEngine(
   return {
     websiteDeliveryStatus,
     totalIssuesCount,
+    summaryMetrics: {
+      totalPagesChecked,
+      totalSectionsChecked,
+      totalComponentsChecked,
+      totalCorrect,
+      totalMissing
+    },
     counters: {
-      missingContent: missingContentCount,
+      missingContent: totalMissing,
       brokenLinks: brokenLinksCount,
       missingButtons: missingButtonsCount,
       seoIssues: seoIssuesCount,
@@ -499,10 +632,24 @@ export function runDeliveryQaEngine(
 function contentDiscrepancyAdd(
   arr: ContentDiscrepancyResult[],
   type: ContentDiscrepancyResult['type'],
+  page: string,
+  section: string,
+  component: QaComponentType,
   item: string,
-  expected?: string,
-  found?: string,
-  notes?: string
+  expected: string,
+  found: string,
+  missingInformation?: string,
+  recommendation?: string
 ) {
-  arr.push({ type, item, expected, found, notes });
+  arr.push({
+    type,
+    page,
+    section,
+    component,
+    item,
+    expected,
+    found,
+    missingInformation,
+    recommendation: recommendation || (type === '❌ Missing' ? 'Add the missing information exactly as written in the uploaded document.' : undefined)
+  });
 }

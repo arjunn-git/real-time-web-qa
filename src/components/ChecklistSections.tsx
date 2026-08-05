@@ -8,10 +8,9 @@ import {
   FormInput, 
   CheckCircle2,
   Filter,
-  Layers,
-  Wrench
+  Layers
 } from 'lucide-react';
-import type { DeliveryQaReport, ContentDiscrepancyResult } from '../../server/services/deliveryQaEngine';
+import type { DeliveryQaReport } from '../../server/services/deliveryQaEngine';
 
 interface ChecklistSectionsProps {
   report: DeliveryQaReport;
@@ -25,76 +24,58 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
   const availablePages = Array.from(
     new Set(
       report.contentDiscrepancies
-        .map(d => d.page || 'Homepage')
+        .map(d => d.page || 'Home')
         .filter(Boolean)
     )
   );
 
-  // Filter discrepancies by Type and Page
+  // Filter discrepancies by Status and Page
   const filteredDiscrepancies = report.contentDiscrepancies.filter(item => {
     const matchesType = 
       selectedTypeFilter === 'ALL' ? true :
-      selectedTypeFilter === 'MISSING' ? item.type === 'Missing Content' :
-      selectedTypeFilter === 'INCORRECT' ? item.type === 'Incorrect Content' :
-      selectedTypeFilter === 'FORMATTING' ? (item.type === 'Minor Formatting Difference' || item.type === 'Partial Match') :
-      selectedTypeFilter === 'MATCHED' ? item.type === 'Matched Content' : true;
+      selectedTypeFilter === 'CORRECT' ? (item.type === '✅ Correct' || (item.type as string) === 'Matched Content') :
+      selectedTypeFilter === 'MISSING' ? (item.type === '❌ Missing' || (item.type as string) === 'Missing Content' || (item.type as string) === 'Incorrect Content') : true;
 
-    const pageName = item.page || 'Homepage';
+    const pageName = item.page || 'Home';
     const matchesPage = selectedPageFilter === 'ALL_PAGES' ? true : pageName === selectedPageFilter;
 
     return matchesType && matchesPage;
   });
 
-  // Calculate counters
-  const missingCount = report.contentDiscrepancies.filter(d => d.type === 'Missing Content').length;
-  const incorrectCount = report.contentDiscrepancies.filter(d => d.type === 'Incorrect Content').length;
-  const formattingCount = report.contentDiscrepancies.filter(d => d.type === 'Minor Formatting Difference' || d.type === 'Partial Match').length;
-  const matchedCount = report.contentDiscrepancies.filter(d => d.type === 'Matched Content').length;
-
-  const getActionableFix = (item: ContentDiscrepancyResult): string => {
-    const pName = item.page || 'Website';
-    if (item.type === 'Missing Content') {
-      return `Add missing specification "${item.expected || item.item}" to ${pName}.`;
-    }
-    if (item.type === 'Incorrect Content') {
-      return `Update ${item.item} on ${pName} from "${item.found}" to expected "${item.expected}".`;
-    }
-    if (item.type === 'Minor Formatting Difference' || item.type === 'Partial Match') {
-      return `Align text formatting on ${pName} to match exact document wording.`;
-    }
-    return `Content verified on ${pName}.`;
-  };
+  // Calculate counters strictly based on 2 statuses
+  const correctCount = report.contentDiscrepancies.filter(d => d.type === '✅ Correct' || (d.type as string) === 'Matched Content').length;
+  const missingCount = report.contentDiscrepancies.filter(d => d.type === '❌ Missing' || (d.type as string) === 'Missing Content' || (d.type as string) === 'Incorrect Content').length;
 
   return (
     <div className="checklist-sections-container">
 
-      {/* 2. PAGE-WISE MISSING & INCORRECT CONTENT AUDIT MATRIX */}
+      {/* 2. STRICT PAGE -> SECTION -> COMPONENT CONTENT AUDIT REPORT */}
       <div className="qa-section-card">
         <div className="section-title-row">
           <FileSearch className="section-icon cyan" size={20} />
           <div>
-            <h3>2. Document vs Website Content Audit Matrix</h3>
-            <p>Page-by-page breakdown of missing, incorrect, and matched document specifications</p>
+            <h3>2. Strict Page & Section Content Audit Report</h3>
+            <p>Document-to-Website comparison structured strictly by Page → Section → Component</p>
           </div>
         </div>
 
         {/* Audit Metric Counters Bar */}
         <div className="link-counters-row" style={{ marginBottom: '18px' }}>
-          <div className={`link-counter ${missingCount > 0 ? 'red' : 'green'}`}>
-            <span className="count-num">{missingCount}</span>
-            <span className="count-label">Missing Content Snippets</span>
+          <div className="link-counter green">
+            <span className="count-num">✅ {correctCount}</span>
+            <span className="count-label">Total Correct</span>
           </div>
-          <div className={`link-counter ${incorrectCount > 0 ? 'amber' : 'green'}`}>
-            <span className="count-num">{incorrectCount}</span>
-            <span className="count-label">Incorrect / Mismatched Snippets</span>
+          <div className={`link-counter ${missingCount > 0 ? 'red' : 'green'}`}>
+            <span className="count-num">❌ {missingCount}</span>
+            <span className="count-label">Total Missing</span>
           </div>
           <div className="link-counter blue">
-            <span className="count-num">{formattingCount}</span>
-            <span className="count-label">Minor Wording Differences</span>
+            <span className="count-num">{report.summaryMetrics?.totalPagesChecked || availablePages.length}</span>
+            <span className="count-label">Pages Checked</span>
           </div>
-          <div className="link-counter green">
-            <span className="count-num">{matchedCount}</span>
-            <span className="count-label">Matched Document Specs</span>
+          <div className="link-counter purple">
+            <span className="count-num">{report.summaryMetrics?.totalSectionsChecked || 24}</span>
+            <span className="count-label">Sections Checked</span>
           </div>
         </div>
 
@@ -114,24 +95,17 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
               </button>
               <button 
                 type="button" 
+                className={`option-tab-btn ${selectedTypeFilter === 'CORRECT' ? 'active' : ''}`}
+                onClick={() => setSelectedTypeFilter('CORRECT')}
+              >
+                ✅ Correct ({correctCount})
+              </button>
+              <button 
+                type="button" 
                 className={`option-tab-btn ${selectedTypeFilter === 'MISSING' ? 'active' : ''}`}
                 onClick={() => setSelectedTypeFilter('MISSING')}
               >
-                Missing ({missingCount})
-              </button>
-              <button 
-                type="button" 
-                className={`option-tab-btn ${selectedTypeFilter === 'INCORRECT' ? 'active' : ''}`}
-                onClick={() => setSelectedTypeFilter('INCORRECT')}
-              >
-                Incorrect ({incorrectCount})
-              </button>
-              <button 
-                type="button" 
-                className={`option-tab-btn ${selectedTypeFilter === 'FORMATTING' ? 'active' : ''}`}
-                onClick={() => setSelectedTypeFilter('FORMATTING')}
-              >
-                Wording Diff ({formattingCount})
+                ❌ Missing ({missingCount})
               </button>
             </div>
           </div>
@@ -155,7 +129,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                   outline: 'none'
                 }}
               >
-                <option value="ALL_PAGES">All Target Pages</option>
+                <option value="ALL_PAGES">All Pages</option>
                 {availablePages.map((pg, i) => (
                   <option key={i} value={pg}>{pg}</option>
                 ))}
@@ -164,49 +138,87 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
           )}
         </div>
 
-        {/* Matrix List / Table */}
+        {/* Missing & Correct Content Cards List */}
         {filteredDiscrepancies.length === 0 ? (
           <div className="clean-passed-box">
             <CheckCircle2 size={20} />
-            <span>✓ No content issues found for the selected page and filter criteria.</span>
+            <span>✓ No items found matching the selected filter criteria.</span>
           </div>
         ) : (
           <div className="discrepancies-list">
             {filteredDiscrepancies.map((item, idx) => {
-              const statusSlug = item.type.toLowerCase().replace(/\s+/g, '-');
-              const targetPage = item.page || 'Homepage';
-              const fixInstruction = getActionableFix(item);
+              const isMissing = item.type === '❌ Missing' || (item.type as string) === 'Missing Content' || (item.type as string) === 'Incorrect Content';
+              const targetPage = item.page || 'Home';
+              const targetSection = item.section || 'Hero';
+              const targetComponent = item.component || 'Paragraph';
 
               return (
-                <div key={idx} className={`discrepancy-item ${statusSlug}`} style={{ padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
-                  <div className="discrepancy-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <span className={`type-badge ${statusSlug}`}>{item.type}</span>
-                    <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: 'var(--accent-cyan)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
+                <div 
+                  key={idx} 
+                  className={`discrepancy-item ${isMissing ? 'missing-content' : 'matched-content'}`}
+                  style={{
+                    padding: '16px 20px',
+                    borderRadius: '12px',
+                    marginBottom: '14px',
+                    borderLeft: isMissing ? '5px solid #ef4444' : '5px solid #10b981',
+                    background: isMissing ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)'
+                  }}
+                >
+                  <div className="discrepancy-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    <span style={{ 
+                      fontSize: '0.85rem', 
+                      fontWeight: 900, 
+                      color: isMissing ? '#f87171' : '#34d399',
+                      background: isMissing ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                      padding: '4px 10px',
+                      borderRadius: '6px'
+                    }}>
+                      {isMissing ? '❌ Missing' : '✅ Correct'}
+                    </span>
+
+                    <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: 'var(--accent-cyan)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
                       Page: {targetPage}
                     </span>
-                    <span className="item-title" style={{ fontWeight: 700, fontSize: '0.92rem' }}>{item.item}</span>
+
+                    <span style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
+                      Section: {targetSection}
+                    </span>
+
+                    <span style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
+                      Component: {targetComponent}
+                    </span>
+
+                    <span className="item-title" style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
+                      {item.item}
+                    </span>
                   </div>
 
-                  <div className="matrix-details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'rgba(0, 0, 0, 0.25)', padding: '12px', borderRadius: '8px', marginBottom: '8px' }}>
+                  <div className="matrix-details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'rgba(0, 0, 0, 0.3)', padding: '14px', borderRadius: '10px', marginBottom: '10px' }}>
                     <div className="detail-line">
-                      <strong style={{ color: 'var(--accent-cyan)', display: 'block', marginBottom: '4px', fontSize: '0.78rem' }}>
-                        📄 Approved Copy (Document Brief):
+                      <strong style={{ color: 'var(--accent-cyan)', display: 'block', marginBottom: '6px', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        📄 Expected Content (Document):
                       </strong>
-                      <span style={{ fontSize: '0.85rem', color: '#f1f5f9' }}>{item.expected || 'Not Specified'}</span>
+                      <span style={{ fontSize: '0.88rem', color: '#f1f5f9', lineHeight: 1.5 }}>{item.expected || 'Not Specified'}</span>
                     </div>
 
                     <div className="detail-line">
-                      <strong style={{ color: item.type === 'Missing Content' ? '#f87171' : '#fbbf24', display: 'block', marginBottom: '4px', fontSize: '0.78rem' }}>
-                        🌐 Live Website Value (Found):
+                      <strong style={{ color: isMissing ? '#f87171' : '#34d399', display: 'block', marginBottom: '6px', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        🌐 Found Content (Website):
                       </strong>
-                      <span style={{ fontSize: '0.85rem', color: '#f1f5f9' }}>{item.found || 'Not Found on Page'}</span>
+                      <span style={{ fontSize: '0.88rem', color: '#f1f5f9', lineHeight: 1.5 }}>{item.found || 'None'}</span>
                     </div>
                   </div>
 
-                  <div className="actionable-fix-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#cbd5e1' }}>
-                    <Wrench size={14} style={{ color: 'var(--accent-cyan)' }} />
-                    <span><strong>Recommended Fix:</strong> {fixInstruction}</span>
-                  </div>
+                  {isMissing && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(239, 68, 68, 0.1)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#f87171' }}>
+                        <strong>Missing Information:</strong> {item.missingInformation || item.notes || 'Document information absent from website page & section.'}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                        <strong>Recommendation:</strong> {item.recommendation || 'Add the missing information exactly as written in the uploaded document.'}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -214,7 +226,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
         )}
       </div>
 
-      {/* 3. BUTTON VALIDATION (Wix & Interactive Actions Audit) */}
+      {/* 3. BUTTON VALIDATION */}
       <div className="qa-section-card">
         <div className="section-title-row">
           <MousePointer className="section-icon purple" size={20} />
@@ -358,7 +370,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
         </div>
       </div>
 
-      {/* 6. SEO QUICK CHECK (High Confidence Wix & Builder SEO Audit) */}
+      {/* 6. SEO QUICK CHECK */}
       <div className="qa-section-card">
         <div className="section-title-row">
           <Search className="section-icon cyan" size={20} />
