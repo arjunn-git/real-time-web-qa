@@ -233,112 +233,189 @@ export function runDeliveryQaEngine(
   // 2. Strict Content Validation (Page -> Section -> Component -> Status)
   const contentDiscrepancies: ContentDiscrepancyResult[] = [];
 
+function cleanAndNormalize(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\s+/g, ' ')
+    .replace(/[\r\n]+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function findMatchingPage(docPageName: string, sitePages: PageScrapeData[]): PageScrapeData | undefined {
+  const cleanDoc = docPageName.toLowerCase().trim();
+  return sitePages.find(p => {
+    const cleanSite = p.name.toLowerCase().trim();
+    if (cleanDoc === cleanSite) return true;
+    if (cleanDoc === 'home' && cleanSite === 'homepage') return true;
+    if (cleanDoc === 'homepage' && cleanSite === 'home') return true;
+    return false;
+  });
+}
+
+function findMatchingSection(docSectionName: string, siteSections: any[]): any | undefined {
+  const cleanDoc = docSectionName.toLowerCase().trim();
+  return siteSections.find(s => {
+    const cleanSite = s.name.toLowerCase().trim();
+    return cleanDoc === cleanSite || (cleanDoc === 'hero' && cleanSite === 'welcome') || (cleanDoc === 'welcome' && cleanSite === 'hero');
+  });
+}
+
   if (docData.structuredContent && docData.structuredContent.pages && docData.structuredContent.pages.length > 0) {
     const sc = docData.structuredContent;
-    sc.pages.forEach((p: any) => {
-      const pageName = p.name || 'Home';
-      const pageData = foundPagesMap.get(pageName) || foundPagesMap.get('Home');
-      const pageVisibleText = pageData ? pageData.visibleText.toLowerCase() : '';
+    sc.pages.forEach((docPage: any) => {
+      const pageName = docPage.name || 'Home';
+      const sitePage = findMatchingPage(pageName, siteData.pages);
 
-      p.sections.forEach((s: any) => {
-        const secName = s.name || 'Hero';
+      if (!sitePage) {
+        // Report Entire Page as "Unable to Match"
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '❌ Missing',
+          pageName,
+          'All Sections',
+          'Paragraph',
+          `Page: ${pageName}`,
+          `Page ${pageName} content specifications`,
+          'Unable to Match',
+          `The page "${pageName}" is missing or inaccessible on the website preview.`,
+          `Create the page "${pageName}" in Wix/CMS and add the matching content.`
+        );
+        missingContentCount++;
+        return;
+      }
 
-        // 1. Heading
-        if (s.heading) {
-          const expectedHeading = s.heading;
-          const hasHeading = pageVisibleText.includes(expectedHeading.toLowerCase()) ||
-                             (pageData && pageData.h1.some(h => h.toLowerCase().includes(expectedHeading.toLowerCase())));
+      // Match Sections
+      const siteSections = sitePage.structuredContent?.sections || [];
+      docPage.sections.forEach((docSec: any) => {
+        const secName = docSec.name || 'Hero';
+        const siteSec = findMatchingSection(secName, siteSections);
 
+        if (!siteSec) {
+          // Report Section as "Unable to Match"
           contentDiscrepancyAdd(
             contentDiscrepancies,
-            hasHeading ? '✅ Correct' : '❌ Missing',
+            '❌ Missing',
             pageName,
             secName,
             'Heading',
-            `Heading: ${expectedHeading.substring(0, 45)}`,
-            expectedHeading,
-            hasHeading ? expectedHeading : 'None',
-            hasHeading ? undefined : 'Heading specified in section is missing from page',
-            hasHeading ? undefined : 'Add the missing heading exactly as written in the uploaded document.'
+            `Section: ${secName}`,
+            `Section ${secName} components`,
+            'Unable to Match',
+            `Section "${secName}" could not be matched on the page.`,
+            `Create the section "${secName}" on page "${pageName}".`
           );
-          if (!hasHeading) missingContentCount++;
+          missingContentCount++;
+          return;
+        }
+
+        // Compare components in the matched section:
+        
+        // 1. Heading
+        if (docSec.heading) {
+          const expH = docSec.heading;
+          const foundH = siteSec.heading || '';
+          const match = cleanAndNormalize(foundH).includes(cleanAndNormalize(expH)) ||
+                        cleanAndNormalize(expH).includes(cleanAndNormalize(foundH));
+          
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            match ? '✅ Correct' : '❌ Missing',
+            pageName,
+            secName,
+            'Heading',
+            `Heading: ${expH.substring(0, 45)}`,
+            expH,
+            match ? foundH : (foundH || 'None')
+          );
+          if (!match) missingContentCount++;
         }
 
         // 2. Paragraphs
-        if (s.paragraphs && s.paragraphs.length > 0) {
-          s.paragraphs.forEach((para: string, idx: number) => {
-            const hasPara = pageVisibleText.includes(para.toLowerCase());
+        if (docSec.paragraphs && docSec.paragraphs.length > 0) {
+          docSec.paragraphs.forEach((para: string, idx: number) => {
+            const cleanDocPara = cleanAndNormalize(para);
+            const match = siteSec.paragraphs.some((sitePara: string) => {
+              const cleanSitePara = cleanAndNormalize(sitePara);
+              return cleanSitePara.includes(cleanDocPara) || cleanDocPara.includes(cleanSitePara);
+            });
+
             contentDiscrepancyAdd(
               contentDiscrepancies,
-              hasPara ? '✅ Correct' : '❌ Missing',
+              match ? '✅ Correct' : '❌ Missing',
               pageName,
               secName,
               'Paragraph',
               `Paragraph ${idx + 1}`,
               para.substring(0, 70) + (para.length > 70 ? '...' : ''),
-              hasPara ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : 'None',
-              hasPara ? undefined : 'Paragraph text is missing from website page section',
-              hasPara ? undefined : 'Add the missing paragraph exactly as written in the uploaded document.'
+              match ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : 'None'
             );
-            if (!hasPara) missingContentCount++;
+            if (!match) missingContentCount++;
           });
         }
 
         // 3. Lists
-        if (s.lists && s.lists.length > 0) {
-          s.lists.forEach((listVal: string, idx: number) => {
-            const hasList = pageVisibleText.includes(listVal.toLowerCase());
+        if (docSec.lists && docSec.lists.length > 0) {
+          docSec.lists.forEach((listVal: string, idx: number) => {
+            const cleanDocList = cleanAndNormalize(listVal);
+            const match = siteSec.lists.some((siteList: string) => {
+              const cleanSiteList = cleanAndNormalize(siteList);
+              return cleanSiteList.includes(cleanDocList) || cleanDocList.includes(cleanSiteList);
+            });
+
             contentDiscrepancyAdd(
               contentDiscrepancies,
-              hasList ? '✅ Correct' : '❌ Missing',
+              match ? '✅ Correct' : '❌ Missing',
               pageName,
               secName,
               'Lists',
               `List Item ${idx + 1}`,
               listVal.substring(0, 70) + (listVal.length > 70 ? '...' : ''),
-              hasList ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : 'None',
-              hasList ? undefined : 'List item content is missing from website page section',
-              hasList ? undefined : 'Add the missing list item exactly as written in the uploaded document.'
+              match ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : 'None'
             );
-            if (!hasList) missingContentCount++;
+            if (!match) missingContentCount++;
           });
         }
 
         // 4. Buttons
-        if (s.buttons && s.buttons.length > 0) {
-          s.buttons.forEach((btn: string) => {
-            const hasBtn = siteData.allButtons.some(b =>
-              b.text.toLowerCase().includes(btn.toLowerCase()) ||
-              btn.toLowerCase().includes(b.text.toLowerCase())
-            );
+        if (docSec.buttons && docSec.buttons.length > 0) {
+          docSec.buttons.forEach((btn: string) => {
+            const cleanDocBtn = cleanAndNormalize(btn);
+            const match = siteSec.buttons.some((siteBtn: string) => {
+              return cleanAndNormalize(siteBtn).includes(cleanDocBtn);
+            });
+
             contentDiscrepancyAdd(
               contentDiscrepancies,
-              hasBtn ? '✅ Correct' : '❌ Missing',
+              match ? '✅ Correct' : '❌ Missing',
               pageName,
               secName,
               'Buttons',
-              `CTA Button ("${btn}")`,
+              `CTA Button: ${btn}`,
               btn,
-              hasBtn ? btn : 'None',
-              hasBtn ? undefined : 'Button / CTA is missing from page section',
-              hasBtn ? undefined : 'Add the missing button / CTA exactly as written in the uploaded document.'
+              match ? btn : 'None'
             );
-            if (!hasBtn) missingContentCount++;
+            if (!match) missingContentCount++;
           });
         }
 
         // 5. Tables
-        if (s.tables && s.tables.length > 0) {
-          s.tables.forEach((table: string[][], idx: number) => {
-            let tableMatched = true;
-            let expectedFlat = table.flat().map(c => c.toLowerCase());
-            let foundCount = 0;
-            expectedFlat.forEach(cell => {
-              if (cell && pageVisibleText.includes(cell)) foundCount++;
-            });
-
-            const matchRatio = expectedFlat.length > 0 ? foundCount / expectedFlat.length : 1;
-            tableMatched = matchRatio >= 0.7;
+        if (docSec.tables && docSec.tables.length > 0) {
+          docSec.tables.forEach((table: string[][], idx: number) => {
+            let tableMatched = false;
+            if (siteSec.tables && siteSec.tables.length > 0) {
+              const expectedFlat = table.flat().map(c => cleanAndNormalize(c)).filter(Boolean);
+              
+              siteSec.tables.forEach((siteTable: string[][]) => {
+                const siteFlat = siteTable.flat().map(c => cleanAndNormalize(c)).filter(Boolean);
+                let overlap = 0;
+                expectedFlat.forEach(cell => {
+                  if (siteFlat.some(sc => sc.includes(cell) || cell.includes(sc))) overlap++;
+                });
+                const matchRatio = expectedFlat.length > 0 ? overlap / expectedFlat.length : 1;
+                if (matchRatio >= 0.7) tableMatched = true;
+              });
+            }
 
             contentDiscrepancyAdd(
               contentDiscrepancies,
@@ -347,32 +424,32 @@ export function runDeliveryQaEngine(
               secName,
               'Tables',
               `Table ${idx + 1} (${table.length} rows)`,
-              `Table structure: ${table[0]?.slice(0, 3).join(' | ')}...`,
-              tableMatched ? 'Table verified on website' : 'None / Incomplete Table Content',
-              tableMatched ? undefined : 'Structured table content is missing from website page',
-              tableMatched ? undefined : 'Add the missing table data exactly as structured in the uploaded document.'
+              `Table structure with cells: ${table[0]?.slice(0, 3).join(' | ')}`,
+              tableMatched ? 'Table content verified in section' : 'None / Incomplete Table Content'
             );
             if (!tableMatched) missingContentCount++;
           });
         }
 
         // 6. Forms
-        if (s.forms && s.forms.length > 0) {
-          s.forms.forEach((formVal: string) => {
-            const hasForm = pageData && pageData.forms.length > 0;
+        if (docSec.forms && docSec.forms.length > 0) {
+          docSec.forms.forEach((formVal: string) => {
+            const cleanDocForm = cleanAndNormalize(formVal);
+            const match = siteSec.forms && siteSec.forms.some((siteForm: string) => {
+              return cleanAndNormalize(siteForm).includes(cleanDocForm);
+            });
+
             contentDiscrepancyAdd(
               contentDiscrepancies,
-              hasForm ? '✅ Correct' : '❌ Missing',
+              match ? '✅ Correct' : '❌ Missing',
               pageName,
               secName,
               'Forms',
               `Form Description`,
               formVal,
-              hasForm ? 'Form present on website page' : 'None',
-              hasForm ? undefined : 'Form description is missing or form not found on website page',
-              hasForm ? undefined : 'Implement the form fields exactly as described in the document.'
+              match ? 'Form verified in section' : 'None'
             );
-            if (!hasForm) missingContentCount++;
+            if (!match) missingContentCount++;
           });
         }
       });
