@@ -16,7 +16,6 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
   const parsedDocItems = parseDocumentContent(docText);
 
   const contentDiscrepancies: ContentDiscrepancyResult[] = [];
-  let missingContentCount = 0;
   let contactIssuesCount = 0;
   let missingButtonsCount = 0;
   let brokenLinksCount = 0;
@@ -30,7 +29,7 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
   const expectedPhone = docPhoneMatch ? docPhoneMatch[1] : undefined;
   const expectedEmail = docEmailMatch ? docEmailMatch[1] : undefined;
 
-  // Audit Phone Number Specification
+  // Audit Phone Number Specification (Only if specified in document brief)
   if (expectedPhone) {
     contentDiscrepancies.push({
       type: '✅ Correct',
@@ -41,23 +40,9 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
       expected: expectedPhone,
       found: expectedPhone
     });
-  } else {
-    contentDiscrepancies.push({
-      type: '❌ Missing',
-      page: 'Home',
-      section: 'Contact',
-      component: 'Contact Info',
-      item: 'Phone Number',
-      expected: 'Official Contact Phone Number',
-      found: 'None',
-      missingInformation: 'No phone number specification found in document or live website',
-      recommendation: 'Add the official phone number exactly as specified in the brief.'
-    });
-    missingContentCount++;
-    contactIssuesCount++;
   }
 
-  // Audit Email Address Specification
+  // Audit Email Address Specification (Only if specified in document brief)
   if (expectedEmail) {
     contentDiscrepancies.push({
       type: '✅ Correct',
@@ -68,20 +53,6 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
       expected: expectedEmail,
       found: expectedEmail
     });
-  } else {
-    contentDiscrepancies.push({
-      type: '❌ Missing',
-      page: 'Home',
-      section: 'Contact',
-      component: 'Contact Info',
-      item: 'Email Address',
-      expected: 'Official Contact Email Address',
-      found: 'None',
-      missingInformation: 'No email address specification found in document or live website',
-      recommendation: 'Add the official email address exactly as specified in the brief.'
-    });
-    missingContentCount++;
-    contactIssuesCount++;
   }
 
   // 2. Audit Document Headings, CTAs, Paragraphs & FAQs
@@ -286,7 +257,7 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
 
   let websiteDeliveryStatus: 'READY FOR DELIVERY' | 'MINOR FIXES REQUIRED' | 'MAJOR ISSUES FOUND' = 'READY FOR DELIVERY';
 
-  if (totalIssuesCount >= 5 || contactInfoReport.email.status === 'Missing') {
+  if (totalIssuesCount >= 5 || (expectedEmail && contactInfoReport.email.status === 'Missing')) {
     websiteDeliveryStatus = 'MAJOR ISSUES FOUND';
   } else if (totalIssuesCount > 0) {
     websiteDeliveryStatus = 'MINOR FIXES REQUIRED';
