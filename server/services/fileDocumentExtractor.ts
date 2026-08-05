@@ -1,5 +1,6 @@
 import mammoth from 'mammoth';
 import { createRequire } from 'module';
+import { parseDocumentToHierarchy } from '../utils/documentParser';
 
 const require = createRequire(import.meta.url);
 const pdfParse = require('pdf-parse');
@@ -8,6 +9,7 @@ export interface ExtractedDocumentData {
   title: string;
   rawText: string;
   fileType: string;
+  structuredContent?: any;
 }
 
 /**
@@ -49,15 +51,23 @@ export async function extractTextFromFileBuffer(
   const ext = filename.split('.').pop()?.toLowerCase() || '';
 
   if (ext === 'docx' || mimetype.includes('wordprocessingml')) {
-    const result = await mammoth.extractRawText({ buffer });
-    const text = cleanPdfBinaryNoise(result.value ? result.value.trim() : '');
+    const textResult = await mammoth.extractRawText({ buffer });
+    const htmlResult = await mammoth.convertToHtml({ buffer });
+    
+    const text = cleanPdfBinaryNoise(textResult.value ? textResult.value.trim() : '');
+    const html = htmlResult.value || '';
+    
     if (!text || text.length < 5) {
       throw new Error(`The uploaded DOCX file "${filename}" appears to be empty or contains no readable text.`);
     }
+
+    const structuredContent = parseDocumentToHierarchy(text, html);
+
     return {
       title: filename,
       rawText: text,
-      fileType: 'DOCX'
+      fileType: 'DOCX',
+      structuredContent
     };
   }
 
@@ -74,10 +84,14 @@ export async function extractTextFromFileBuffer(
     if (!text || text.length < 5) {
       throw new Error(`The uploaded PDF file "${filename}" appears to be empty or contains no readable text.`);
     }
+
+    const structuredContent = parseDocumentToHierarchy(text);
+
     return {
       title: filename,
       rawText: text,
-      fileType: 'PDF'
+      fileType: 'PDF',
+      structuredContent
     };
   }
 
@@ -86,10 +100,14 @@ export async function extractTextFromFileBuffer(
     if (!text || text.length < 5) {
       throw new Error(`The uploaded file "${filename}" appears to be empty.`);
     }
+
+    const structuredContent = parseDocumentToHierarchy(text);
+
     return {
       title: filename,
       rawText: text,
-      fileType: ext.toUpperCase()
+      fileType: ext.toUpperCase(),
+      structuredContent
     };
   }
 
@@ -99,9 +117,12 @@ export async function extractTextFromFileBuffer(
     throw new Error(`Unsupported or unreadable file format "${ext}". Please upload a DOCX, PDF, TXT, or MD file.`);
   }
 
+  const structuredContent = parseDocumentToHierarchy(fallbackText);
+
   return {
     title: filename,
     rawText: fallbackText,
-    fileType: ext.toUpperCase() || 'FILE'
+    fileType: ext.toUpperCase() || 'FILE',
+    structuredContent
   };
 }

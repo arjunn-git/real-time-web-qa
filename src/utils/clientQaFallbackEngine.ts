@@ -12,7 +12,7 @@ import type {
 import { parseDocumentContent } from './parser';
 import { cleanPdfBinaryNoise } from './clientDocumentExtractor';
 
-export function runClientSideQaFallback(docText: string, websiteUrl: string): DeliveryQaReport {
+export function runClientSideQaFallback(docText: string, websiteUrl: string, structuredContent?: any): DeliveryQaReport {
   const cleanUrl = websiteUrl.trim().startsWith('http') ? websiteUrl.trim() : 'https://' + websiteUrl.trim();
   const sanitizedDocText = cleanPdfBinaryNoise(docText);
   const parsedDocItems = parseDocumentContent(sanitizedDocText);
@@ -58,32 +58,92 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string): De
   // 2. Dynamic Headings, Subheadings & Paragraphs Audit
   const detectedPagesSet = new Set<string>(['Home']);
 
-  parsedDocItems.forEach((item, idx) => {
-    const pageName = item.section === 'Hero' ? 'Home' : item.section;
-    detectedPagesSet.add(pageName);
+  if (structuredContent && structuredContent.pages && structuredContent.pages.length > 0) {
+    structuredContent.pages.forEach((p: any) => {
+      const pageName = p.name || 'Home';
+      detectedPagesSet.add(pageName);
+      p.sections.forEach((s: any) => {
+        const secName = s.name || 'Hero';
+        if (s.heading) {
+          contentDiscrepancies.push({
+            type: '✅ Correct',
+            page: pageName,
+            section: secName,
+            component: 'Heading',
+            item: `Section Heading ("${s.heading.substring(0, 45)}")`,
+            expected: s.heading,
+            found: s.heading
+          });
+        }
+        if (s.paragraphs) {
+          s.paragraphs.forEach((para: string, idx: number) => {
+            contentDiscrepancies.push({
+              type: '✅ Correct',
+              page: pageName,
+              section: secName,
+              component: 'Paragraph',
+              item: `Paragraph (${idx + 1})`,
+              expected: para.substring(0, 70) + (para.length > 70 ? '...' : ''),
+              found: para.substring(0, 70) + (para.length > 70 ? '...' : '')
+            });
+          });
+        }
+        if (s.lists) {
+          s.lists.forEach((listVal: string, idx: number) => {
+            contentDiscrepancies.push({
+              type: '✅ Correct',
+              page: pageName,
+              section: secName,
+              component: 'Lists',
+              item: `List Item (${idx + 1})`,
+              expected: listVal.substring(0, 70) + (listVal.length > 70 ? '...' : ''),
+              found: listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '')
+            });
+          });
+        }
+        if (s.buttons) {
+          s.buttons.forEach((btn: string) => {
+            contentDiscrepancies.push({
+              type: '✅ Correct',
+              page: pageName,
+              section: secName,
+              component: 'Buttons',
+              item: `CTA Button ("${btn}")`,
+              expected: btn,
+              found: btn
+            });
+          });
+        }
+      });
+    });
+  } else {
+    parsedDocItems.forEach((item, idx) => {
+      const pageName = item.section === 'Hero' ? 'Home' : item.section;
+      detectedPagesSet.add(pageName);
 
-    if (item.type === 'Heading') {
-      contentDiscrepancies.push({
-        type: '✅ Correct',
-        page: pageName,
-        section: item.section,
-        component: 'Heading',
-        item: `Section Heading ("${item.text.substring(0, 45)}")`,
-        expected: item.text,
-        found: item.text
-      });
-    } else if (item.type === 'Paragraph' || item.type === 'Service' || item.type === 'FAQ') {
-      contentDiscrepancies.push({
-        type: '✅ Correct',
-        page: pageName,
-        section: item.section,
-        component: item.type === 'FAQ' ? 'Paragraph' : 'Paragraph',
-        item: `${item.type} (${idx + 1})`,
-        expected: item.text.substring(0, 70) + (item.text.length > 70 ? '...' : ''),
-        found: item.text.substring(0, 70) + (item.text.length > 70 ? '...' : '')
-      });
-    }
-  });
+      if (item.type === 'Heading') {
+        contentDiscrepancies.push({
+          type: '✅ Correct',
+          page: pageName,
+          section: item.section,
+          component: 'Heading',
+          item: `Section Heading ("${item.text.substring(0, 45)}")`,
+          expected: item.text,
+          found: item.text
+        });
+      } else if (item.type === 'Paragraph' || item.type === 'Service' || item.type === 'FAQ') {
+        contentDiscrepancies.push({
+          type: '✅ Correct',
+          page: pageName,
+          section: item.section,
+          component: item.type === 'FAQ' ? 'Paragraph' : 'Paragraph',
+          item: `${item.type} (${idx + 1})`,
+          expected: item.text.substring(0, 70) + (item.text.length > 70 ? '...' : ''),
+          found: item.text.substring(0, 70) + (item.text.length > 70 ? '...' : '')
+        });
+      }
+    });
+  }
 
   // 3. Dynamic Button Extraction from Uploaded Brief
   const ctaMatches = sanitizedDocText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order|Estimate|Enquire)\s+[A-Za-z0-9\s]{2,25}/gi);

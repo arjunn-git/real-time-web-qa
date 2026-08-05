@@ -6,6 +6,7 @@ export interface GoogleDocResult {
   rawText: string;
   html?: string;
   title?: string;
+  structuredContent?: any;
 }
 
 /**

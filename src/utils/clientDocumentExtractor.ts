@@ -81,17 +81,135 @@ export function extractPdfTextFromRawArrayBuffer(buffer: ArrayBuffer): string {
   return cleanPdfBinaryNoise(str);
 }
 
-export async function extractTextFromClientFile(file: File): Promise<{ title: string; rawText: string }> {
+export function parseDocumentToHierarchyClient(rawText: string, html?: string): { pages: any[] } {
+  const pages: any[] = [];
+
+  // Parse HTML if available via browser DOMParser
+  if (html && typeof DOMParser !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      let currentPage: any = { name: 'Home', sections: [] };
+      let currentSection: any = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+
+      const commitSection = () => {
+        if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0 || currentSection.buttons.length > 0) {
+          currentPage.sections.push({ ...currentSection });
+          currentSection = { name: 'General', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+        }
+      };
+
+      doc.body.childNodes.forEach((node) => {
+        const el = node as HTMLElement;
+        if (el.nodeType !== 1) return; // Only element nodes
+        const tagName = el.tagName.toLowerCase();
+        const textVal = (el.textContent || '').trim();
+
+        if (tagName === 'hr') {
+          commitSection();
+          if (currentPage.sections.length > 0) {
+            pages.push({ ...currentPage });
+          }
+          currentPage = { name: `Page ${pages.length + 1}`, sections: [] };
+          currentSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+          return;
+        }
+
+        if (/^h[1-6]$/.test(tagName)) {
+          commitSection();
+          currentSection.name = textVal;
+          currentSection.heading = textVal;
+          return;
+        }
+
+        if (tagName === 'table') {
+          const tableRows: string[][] = [];
+          el.querySelectorAll('tr').forEach((tr) => {
+            const rowData: string[] = [];
+            tr.querySelectorAll('td, th').forEach((cell) => {
+              rowData.push((cell.textContent || '').trim());
+            });
+            if (rowData.length > 0) tableRows.push(rowData);
+          });
+          currentSection.tables = currentSection.tables || [];
+          currentSection.tables.push(tableRows);
+          return;
+        }
+
+        if (tagName === 'ul' || tagName === 'ol') {
+          el.querySelectorAll('li').forEach((li) => {
+            currentSection.lists.push((li.textContent || '').trim());
+          });
+          return;
+        }
+
+        if (tagName === 'p' && textVal) {
+          currentSection.paragraphs.push(textVal);
+        }
+      });
+
+      commitSection();
+      if (currentPage.sections.length > 0) {
+        pages.push(currentPage);
+      }
+
+      if (pages.length > 0) return { pages };
+    } catch (e) {
+      console.warn('Frontend DOM parsing failed, falling back to text split', e);
+    }
+  }
+
+  // Plaintext fallback splits by form feed (\f)
+  const pdfPages = rawText.split(/\x0c|\f/);
+  pdfPages.forEach((pageText, pIdx) => {
+    const lines = pageText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+    const page: any = { name: pIdx === 0 ? 'Home' : `Page ${pIdx + 1}`, sections: [] };
+    let currentSection: any = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+
+    lines.forEach(line => {
+      const headingMatch = line.match(/^#{1,6}\s*(.+)$/) || line.match(/^\[(.+)\]$/);
+      const isHeading = headingMatch || (line.length < 50 && line === line.toUpperCase() && !line.match(/[.!?]$/));
+      if (isHeading) {
+        if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0 || currentSection.buttons.length > 0) {
+          page.sections.push({ ...currentSection });
+        }
+        const headingVal = headingMatch ? headingMatch[1] : line;
+        currentSection = { name: headingVal, heading: headingVal, paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+        return;
+      }
+      if (line.match(/^[-*•\d+.]\s*(.+)$/)) {
+        currentSection.lists.push(line);
+      } else {
+        currentSection.paragraphs.push(line);
+      }
+    });
+
+    if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0) {
+      page.sections.push(currentSection);
+    }
+    pages.push(page);
+  });
+
+  return { pages };
+}
+
+export async function extractTextFromClientFile(file: File): Promise<{ title: string; rawText: string; structuredContent?: any }> {
   const name = file.name;
   const ext = name.split('.').pop()?.toLowerCase() || '';
 
   if (ext === 'docx' || ext === 'doc') {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer });
-      const cleaned = cleanPdfBinaryNoise(result.value || '');
+      const textResult = await mammoth.extractRawText({ arrayBuffer });
+      const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
+      
+      const cleaned = cleanPdfBinaryNoise(textResult.value || '');
+      const html = htmlResult.value || '';
+      
       if (cleaned && cleaned.length > 5) {
-        return { title: name, rawText: cleaned };
+        const structuredContent = parseDocumentToHierarchyClient(cleaned, html);
+        return { title: name, rawText: cleaned, structuredContent };
       }
     } catch (e) {
       console.warn('Client mammoth extraction failed, falling back to text reader:', e);
@@ -103,7 +221,8 @@ export async function extractTextFromClientFile(file: File): Promise<{ title: st
       const arrayBuffer = await file.arrayBuffer();
       const extractedPdfText = extractPdfTextFromRawArrayBuffer(arrayBuffer);
       if (extractedPdfText && extractedPdfText.length > 5) {
-        return { title: name, rawText: extractedPdfText };
+        const structuredContent = parseDocumentToHierarchyClient(extractedPdfText);
+        return { title: name, rawText: extractedPdfText, structuredContent };
       }
     } catch (e) {
       console.warn('Client PDF ArrayBuffer extraction failed:', e);
@@ -115,7 +234,8 @@ export async function extractTextFromClientFile(file: File): Promise<{ title: st
     reader.onload = (e) => {
       const text = String(e.target?.result || '').trim();
       const cleaned = cleanPdfBinaryNoise(text);
-      resolve({ title: name, rawText: cleaned || `Content from ${name}` });
+      const structuredContent = parseDocumentToHierarchyClient(cleaned);
+      resolve({ title: name, rawText: cleaned || `Content from ${name}`, structuredContent });
     };
     reader.onerror = () => {
       resolve({ title: name, rawText: `Content from ${name}` });

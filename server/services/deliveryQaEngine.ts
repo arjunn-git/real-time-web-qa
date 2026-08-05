@@ -233,212 +233,335 @@ export function runDeliveryQaEngine(
   // 2. Strict Content Validation (Page -> Section -> Component -> Status)
   const contentDiscrepancies: ContentDiscrepancyResult[] = [];
 
-  // Check expected Phone
-  const docPhoneMatch = docText.match(/(\+?\d[0-9\s\-]{8,}\d)/);
-  const foundPhone = siteData.globalContactInfo.phone.value;
+  if (docData.structuredContent && docData.structuredContent.pages && docData.structuredContent.pages.length > 0) {
+    const sc = docData.structuredContent;
+    sc.pages.forEach((p: any) => {
+      const pageName = p.name || 'Home';
+      const pageData = foundPagesMap.get(pageName) || foundPagesMap.get('Home');
+      const pageVisibleText = pageData ? pageData.visibleText.toLowerCase() : '';
 
-  if (docPhoneMatch) {
-    const expectedPhone = docPhoneMatch[1];
-    if (!siteData.globalContactInfo.phone.present) {
-      contentDiscrepancyAdd(
-        contentDiscrepancies,
-        '❌ Missing',
-        'Home',
-        'Contact',
-        'Contact Info',
-        'Phone Number',
-        expectedPhone,
-        'None',
-        'Phone Number (+44 / Local format)',
-        'Add the missing phone number exactly as written in the uploaded document.'
-      );
-      missingContentCount++;
-      contactIssuesCount++;
-    } else if (foundPhone && arePhonesEquivalent(expectedPhone, foundPhone)) {
-      contentDiscrepancyAdd(
-        contentDiscrepancies,
-        '✅ Correct',
-        'Home',
-        'Contact',
-        'Contact Info',
-        'Phone Number',
-        expectedPhone,
-        foundPhone
-      );
-    } else {
-      contentDiscrepancyAdd(
-        contentDiscrepancies,
-        '❌ Missing',
-        'Home',
-        'Contact',
-        'Contact Info',
-        'Phone Number',
-        expectedPhone,
-        foundPhone || 'None',
-        `Phone number mismatch (Expected: ${expectedPhone}, Found: ${foundPhone || 'None'})`,
-        'Update phone number to match the exact uploaded document value.'
-      );
-      missingContentCount++;
-      contactIssuesCount++;
-    }
-  }
+      p.sections.forEach((s: any) => {
+        const secName = s.name || 'Hero';
 
-  // Check expected Email
-  const docEmailMatch = docText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-  const foundEmail = siteData.globalContactInfo.email.value;
+        // 1. Heading
+        if (s.heading) {
+          const expectedHeading = s.heading;
+          const hasHeading = pageVisibleText.includes(expectedHeading.toLowerCase()) ||
+                             (pageData && pageData.h1.some(h => h.toLowerCase().includes(expectedHeading.toLowerCase())));
 
-  if (docEmailMatch) {
-    const expectedEmail = docEmailMatch[1];
-    if (!siteData.globalContactInfo.email.present) {
-      contentDiscrepancyAdd(
-        contentDiscrepancies,
-        '❌ Missing',
-        'Home',
-        'Contact',
-        'Contact Info',
-        'Email Address',
-        expectedEmail,
-        'None',
-        'Official Email Address',
-        'Add the missing email address exactly as written in the uploaded document.'
-      );
-      missingContentCount++;
-      contactIssuesCount++;
-    } else if (foundEmail && areEmailsEquivalent(expectedEmail, foundEmail)) {
-      contentDiscrepancyAdd(
-        contentDiscrepancies,
-        '✅ Correct',
-        'Home',
-        'Contact',
-        'Contact Info',
-        'Email Address',
-        expectedEmail,
-        foundEmail
-      );
-    } else {
-      contentDiscrepancyAdd(
-        contentDiscrepancies,
-        '❌ Missing',
-        'Home',
-        'Contact',
-        'Contact Info',
-        'Email Address',
-        expectedEmail,
-        foundEmail || 'None',
-        `Email address mismatch (Expected: ${expectedEmail}, Found: ${foundEmail || 'None'})`,
-        'Update email address to match the exact uploaded document value.'
-      );
-      missingContentCount++;
-      contactIssuesCount++;
-    }
-  }
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            hasHeading ? '✅ Correct' : '❌ Missing',
+            pageName,
+            secName,
+            'Heading',
+            `Heading: ${expectedHeading.substring(0, 45)}`,
+            expectedHeading,
+            hasHeading ? expectedHeading : 'None',
+            hasHeading ? undefined : 'Heading specified in section is missing from page',
+            hasHeading ? undefined : 'Add the missing heading exactly as written in the uploaded document.'
+          );
+          if (!hasHeading) missingContentCount++;
+        }
 
-  // Compare CTAs from document specifications
-  const docCtaMatches = docText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order)\s+[A-Za-z0-9\s]{2,30}/gi);
-  if (docCtaMatches && docCtaMatches.length > 0) {
-    const uniqueDocCtas: string[] = Array.from(new Set(docCtaMatches.map((c: string) => c.trim()))).slice(0, 5);
-    uniqueDocCtas.forEach((cta: string) => {
-      const matchingBtn = siteData.allButtons.find(b => 
-        b.text.toLowerCase().includes(cta.toLowerCase()) || 
-        cta.toLowerCase().includes(b.text.toLowerCase())
-      );
-      if (matchingBtn) {
+        // 2. Paragraphs
+        if (s.paragraphs && s.paragraphs.length > 0) {
+          s.paragraphs.forEach((para: string, idx: number) => {
+            const hasPara = pageVisibleText.includes(para.toLowerCase());
+            contentDiscrepancyAdd(
+              contentDiscrepancies,
+              hasPara ? '✅ Correct' : '❌ Missing',
+              pageName,
+              secName,
+              'Paragraph',
+              `Paragraph ${idx + 1}`,
+              para.substring(0, 70) + (para.length > 70 ? '...' : ''),
+              hasPara ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : 'None',
+              hasPara ? undefined : 'Paragraph text is missing from website page section',
+              hasPara ? undefined : 'Add the missing paragraph exactly as written in the uploaded document.'
+            );
+            if (!hasPara) missingContentCount++;
+          });
+        }
+
+        // 3. Lists
+        if (s.lists && s.lists.length > 0) {
+          s.lists.forEach((listVal: string, idx: number) => {
+            const hasList = pageVisibleText.includes(listVal.toLowerCase());
+            contentDiscrepancyAdd(
+              contentDiscrepancies,
+              hasList ? '✅ Correct' : '❌ Missing',
+              pageName,
+              secName,
+              'Lists',
+              `List Item ${idx + 1}`,
+              listVal.substring(0, 70) + (listVal.length > 70 ? '...' : ''),
+              hasList ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : 'None',
+              hasList ? undefined : 'List item content is missing from website page section',
+              hasList ? undefined : 'Add the missing list item exactly as written in the uploaded document.'
+            );
+            if (!hasList) missingContentCount++;
+          });
+        }
+
+        // 4. Buttons
+        if (s.buttons && s.buttons.length > 0) {
+          s.buttons.forEach((btn: string) => {
+            const hasBtn = siteData.allButtons.some(b =>
+              b.text.toLowerCase().includes(btn.toLowerCase()) ||
+              btn.toLowerCase().includes(b.text.toLowerCase())
+            );
+            contentDiscrepancyAdd(
+              contentDiscrepancies,
+              hasBtn ? '✅ Correct' : '❌ Missing',
+              pageName,
+              secName,
+              'Buttons',
+              `CTA Button ("${btn}")`,
+              btn,
+              hasBtn ? btn : 'None',
+              hasBtn ? undefined : 'Button / CTA is missing from page section',
+              hasBtn ? undefined : 'Add the missing button / CTA exactly as written in the uploaded document.'
+            );
+            if (!hasBtn) missingContentCount++;
+          });
+        }
+
+        // 5. Tables
+        if (s.tables && s.tables.length > 0) {
+          s.tables.forEach((table: string[][], idx: number) => {
+            let tableMatched = true;
+            let expectedFlat = table.flat().map(c => c.toLowerCase());
+            let foundCount = 0;
+            expectedFlat.forEach(cell => {
+              if (cell && pageVisibleText.includes(cell)) foundCount++;
+            });
+
+            const matchRatio = expectedFlat.length > 0 ? foundCount / expectedFlat.length : 1;
+            tableMatched = matchRatio >= 0.7;
+
+            contentDiscrepancyAdd(
+              contentDiscrepancies,
+              tableMatched ? '✅ Correct' : '❌ Missing',
+              pageName,
+              secName,
+              'Tables',
+              `Table ${idx + 1} (${table.length} rows)`,
+              `Table structure: ${table[0]?.slice(0, 3).join(' | ')}...`,
+              tableMatched ? 'Table verified on website' : 'None / Incomplete Table Content',
+              tableMatched ? undefined : 'Structured table content is missing from website page',
+              tableMatched ? undefined : 'Add the missing table data exactly as structured in the uploaded document.'
+            );
+            if (!tableMatched) missingContentCount++;
+          });
+        }
+
+        // 6. Forms
+        if (s.forms && s.forms.length > 0) {
+          s.forms.forEach((formVal: string) => {
+            const hasForm = pageData && pageData.forms.length > 0;
+            contentDiscrepancyAdd(
+              contentDiscrepancies,
+              hasForm ? '✅ Correct' : '❌ Missing',
+              pageName,
+              secName,
+              'Forms',
+              `Form Description`,
+              formVal,
+              hasForm ? 'Form present on website page' : 'None',
+              hasForm ? undefined : 'Form description is missing or form not found on website page',
+              hasForm ? undefined : 'Implement the form fields exactly as described in the document.'
+            );
+            if (!hasForm) missingContentCount++;
+          });
+        }
+      });
+    });
+  } else {
+    // Check expected Phone
+    const docPhoneMatch = docText.match(/(\+?\d[0-9\s\-]{8,}\d)/);
+    const foundPhone = siteData.globalContactInfo.phone.value;
+
+    if (docPhoneMatch) {
+      const expectedPhone = docPhoneMatch[1];
+      if (!siteData.globalContactInfo.phone.present) {
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '❌ Missing',
+          'Home',
+          'Contact',
+          'Contact Info',
+          'Phone Number',
+          expectedPhone,
+          'None',
+          'Phone Number (+44 / Local format)',
+          'Add the missing phone number exactly as written in the uploaded document.'
+        );
+        missingContentCount++;
+        contactIssuesCount++;
+      } else if (foundPhone && arePhonesEquivalent(expectedPhone, foundPhone)) {
         contentDiscrepancyAdd(
           contentDiscrepancies,
           '✅ Correct',
-          matchingBtn.page || 'Home',
-          'CTA',
-          'Buttons',
-          `CTA Button ("${cta}")`,
-          cta,
-          matchingBtn.text
+          'Home',
+          'Contact',
+          'Contact Info',
+          'Phone Number',
+          expectedPhone,
+          foundPhone
         );
       } else {
         contentDiscrepancyAdd(
           contentDiscrepancies,
           '❌ Missing',
           'Home',
-          'CTA',
-          'Buttons',
-          `CTA Button ("${cta}")`,
-          cta,
-          'None',
-          `CTA Button "${cta}" is missing from website body content`,
-          'Add the missing CTA button exactly as written in the uploaded document.'
+          'Contact',
+          'Contact Info',
+          'Phone Number',
+          expectedPhone,
+          foundPhone || 'None',
+          `Phone number mismatch (Expected: ${expectedPhone}, Found: ${foundPhone || 'None'})`,
+          'Update phone number to match the exact uploaded document value.'
         );
         missingContentCount++;
+        contactIssuesCount++;
       }
-    });
-  }
+    }
 
-  // Compare Headings from document specifications
-  const docHeadings = docText.match(/^(#{1,4}|\[|\bHeading:\b)\s*(.+)$/gm);
-  if (docHeadings && docHeadings.length > 0) {
-    const uniqueHeadings = Array.from(new Set(docHeadings.map(h => h.replace(/^#{1,4}\s*|^\[|\]$|^\bHeading:\b\s*/gi, '').trim()))).filter(h => h.length > 3).slice(0, 5);
-    const allSiteH1s = siteData.pages.flatMap(p => p.h1).map(h => h.toLowerCase());
-    
-    uniqueHeadings.forEach(h => {
-      const siteHasHeading = allSiteH1s.some(sh => sh.includes(h.toLowerCase()) || h.toLowerCase().includes(sh));
-      if (siteHasHeading) {
+    // Check expected Email
+    const docEmailMatch = docText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    const foundEmail = siteData.globalContactInfo.email.value;
+
+    if (docEmailMatch) {
+      const expectedEmail = docEmailMatch[1];
+      if (!siteData.globalContactInfo.email.present) {
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '❌ Missing',
+          'Home',
+          'Contact',
+          'Contact Info',
+          'Email Address',
+          expectedEmail,
+          'None',
+          'Official Email Address',
+          'Add the missing email address exactly as written in the uploaded document.'
+        );
+        missingContentCount++;
+        contactIssuesCount++;
+      } else if (foundEmail && areEmailsEquivalent(expectedEmail, foundEmail)) {
         contentDiscrepancyAdd(
           contentDiscrepancies,
           '✅ Correct',
           'Home',
-          'Hero',
-          'Heading',
-          `Section Heading ("${h}")`,
-          h,
-          h
+          'Contact',
+          'Contact Info',
+          'Email Address',
+          expectedEmail,
+          foundEmail
         );
       } else {
         contentDiscrepancyAdd(
           contentDiscrepancies,
           '❌ Missing',
           'Home',
-          'Hero',
-          'Heading',
-          `Section Heading ("${h}")`,
-          h,
-          'None',
-          `Section heading "${h}" is missing on website page`,
-          'Add the missing heading exactly as written in the uploaded document.'
+          'Contact',
+          'Contact Info',
+          'Email Address',
+          expectedEmail,
+          foundEmail || 'None',
+          `Email address mismatch (Expected: ${expectedEmail}, Found: ${foundEmail || 'None'})`,
+          'Update email address to match the exact uploaded document value.'
         );
         missingContentCount++;
+        contactIssuesCount++;
       }
-    });
-  }
+    }
 
-  // Perform deep paragraph & sentence level audit
-  const docParagraphs = docText.split(/\r?\n/).map(p => p.trim()).filter(p => p.length > 25);
-  const allSiteVisibleText = siteData.pages.map(p => p.visibleText.toLowerCase()).join(' ');
-
-  if (docParagraphs.length > 0) {
-    const sampleParagraphs = docParagraphs.slice(0, 8);
-    sampleParagraphs.forEach((para, idx) => {
-      const paraLower = para.toLowerCase();
-      if (allSiteVisibleText.includes(paraLower)) {
-        contentDiscrepancyAdd(
-          contentDiscrepancies,
-          '✅ Correct',
-          'Home',
-          'About',
-          'Paragraph',
-          `Paragraph ${idx + 1}`,
-          para.substring(0, 70) + '...',
-          para.substring(0, 70) + '...'
+    // Compare CTAs from document specifications
+    const docCtaMatches = docText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order)\s+[A-Za-z0-9\s]{2,30}/gi);
+    if (docCtaMatches && docCtaMatches.length > 0) {
+      const uniqueDocCtas: string[] = Array.from(new Set(docCtaMatches.map((c: string) => c.trim()))).slice(0, 5);
+      uniqueDocCtas.forEach((cta: string) => {
+        const matchingBtn = siteData.allButtons.find(b => 
+          b.text.toLowerCase().includes(cta.toLowerCase()) || 
+          cta.toLowerCase().includes(b.text.toLowerCase())
         );
-      } else {
-        let bestMatchSnippet = '';
-        let bestSim = 0;
-        siteData.pages.forEach(p => {
-          const sim = calculateTextSimilarity(para, p.visibleText);
-          if (sim > bestSim) {
-            bestSim = sim;
-            bestMatchSnippet = p.visibleText.substring(0, 70) + '...';
-          }
-        });
+        if (matchingBtn) {
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            '✅ Correct',
+            matchingBtn.page || 'Home',
+            'CTA',
+            'Buttons',
+            `CTA Button ("${cta}")`,
+            cta,
+            matchingBtn.text
+          );
+        } else {
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            '❌ Missing',
+            'Home',
+            'CTA',
+            'Buttons',
+            `CTA Button ("${cta}")`,
+            cta,
+            'None',
+            `CTA Button "${cta}" is missing from website body content`,
+            'Add the missing CTA button exactly as written in the uploaded document.'
+          );
+          missingContentCount++;
+        }
+      });
+    }
 
-        if (bestSim >= 0.9) {
+    // Compare Headings from document specifications
+    const docHeadings = docText.match(/^(#{1,4}|\[|\bHeading:\b)\s*(.+)$/gm);
+    if (docHeadings && docHeadings.length > 0) {
+      const uniqueHeadings = Array.from(new Set(docHeadings.map(h => h.replace(/^#{1,4}\s*|^\[|\]$|^\bHeading:\b\s*/gi, '').trim()))).filter(h => h.length > 3).slice(0, 5);
+      const allSiteH1s = siteData.pages.flatMap(p => p.h1).map(h => h.toLowerCase());
+      
+      uniqueHeadings.forEach(h => {
+        const siteHasHeading = allSiteH1s.some(sh => sh.includes(h.toLowerCase()) || h.toLowerCase().includes(sh));
+        if (siteHasHeading) {
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            '✅ Correct',
+            'Home',
+            'Hero',
+            'Heading',
+            `Section Heading ("${h}")`,
+            h,
+            h
+          );
+        } else {
+          contentDiscrepancyAdd(
+            contentDiscrepancies,
+            '❌ Missing',
+            'Home',
+            'Hero',
+            'Heading',
+            `Section Heading ("${h}")`,
+            h,
+            'None',
+            `Section heading "${h}" is missing on website page`,
+            'Add the missing heading exactly as written in the uploaded document.'
+          );
+          missingContentCount++;
+        }
+      });
+    }
+
+    // Perform deep paragraph & sentence level audit
+    const docParagraphs = docText.split(/\r?\n/).map(p => p.trim()).filter(p => p.length > 25);
+    const allSiteVisibleText = siteData.pages.map(p => p.visibleText.toLowerCase()).join(' ');
+
+    if (docParagraphs.length > 0) {
+      const sampleParagraphs = docParagraphs.slice(0, 8);
+      sampleParagraphs.forEach((para, idx) => {
+        const paraLower = para.toLowerCase();
+        if (allSiteVisibleText.includes(paraLower)) {
           contentDiscrepancyAdd(
             contentDiscrepancies,
             '✅ Correct',
@@ -447,25 +570,48 @@ export function runDeliveryQaEngine(
             'Paragraph',
             `Paragraph ${idx + 1}`,
             para.substring(0, 70) + '...',
-            bestMatchSnippet
+            para.substring(0, 70) + '...'
           );
         } else {
-          contentDiscrepancyAdd(
-            contentDiscrepancies,
-            '❌ Missing',
-            'Home',
-            'About',
-            'Paragraph',
-            `Paragraph ${idx + 1}`,
-            para.substring(0, 70) + '...',
-            bestMatchSnippet || 'None',
-            `Specific paragraph information missing or modified on website`,
-            'Add the missing paragraph information exactly as written in the uploaded document.'
-          );
-          missingContentCount++;
+          let bestMatchSnippet = '';
+          let bestSim = 0;
+          siteData.pages.forEach(p => {
+            const sim = calculateTextSimilarity(para, p.visibleText);
+            if (sim > bestSim) {
+              bestSim = sim;
+              bestMatchSnippet = p.visibleText.substring(0, 70) + '...';
+            }
+          });
+
+          if (bestSim >= 0.9) {
+            contentDiscrepancyAdd(
+              contentDiscrepancies,
+              '✅ Correct',
+              'Home',
+              'About',
+              'Paragraph',
+              `Paragraph ${idx + 1}`,
+              para.substring(0, 70) + '...',
+              bestMatchSnippet
+            );
+          } else {
+            contentDiscrepancyAdd(
+              contentDiscrepancies,
+              '❌ Missing',
+              'Home',
+              'About',
+              'Paragraph',
+              `Paragraph ${idx + 1}`,
+              para.substring(0, 70) + '...',
+              bestMatchSnippet || 'None',
+              `Specific paragraph information missing or modified on website`,
+              'Add the missing paragraph information exactly as written in the uploaded document.'
+            );
+            missingContentCount++;
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   // 3. Button Validation Summary

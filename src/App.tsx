@@ -94,13 +94,15 @@ export const App: React.FC = () => {
         setAnalysisStep('3. Generating Complete QA Inspection Report...');
         let docText = pastedText.trim();
         let docTitle = 'Uploaded Master Specification';
+        let structuredContent: any = null;
         if (!isUsingPaste && selectedFile) {
           const extracted = await extractTextFromClientFile(selectedFile);
           docText = extracted.rawText;
           docTitle = extracted.title;
+          structuredContent = extracted.structuredContent;
         }
 
-        const fallbackReport = runClientSideQaFallback(docText, websiteUrl);
+        const fallbackReport = runClientSideQaFallback(docText, websiteUrl, structuredContent);
         setQaReport(fallbackReport);
         setDocMetaData({ title: docTitle });
         setWebMetaData({ title: 'Website Preview', url: websiteUrl.trim() });

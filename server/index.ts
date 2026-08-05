@@ -73,12 +73,21 @@ app.post('/api/validate-upload', upload.single('documentFile'), async (req, res)
     const siteData = await scrapeFullWebsite(websiteUrl);
 
     // Format doc result for QA engine
-    const docFormat = { docId: file.originalname, rawText: fileDocResult.rawText, title: file.originalname };
+    const docFormat = { 
+      docId: file.originalname, 
+      rawText: fileDocResult.rawText, 
+      title: file.originalname,
+      structuredContent: fileDocResult.structuredContent
+    };
     const qaReport = runDeliveryQaEngine(docFormat, siteData);
 
     return res.json({
       success: true,
-      document: { title: file.originalname, fileType: fileDocResult.fileType },
+      document: { 
+        title: file.originalname, 
+        fileType: fileDocResult.fileType,
+        structuredContent: fileDocResult.structuredContent
+      },
       website: { title: siteData.siteTitle || 'Website Preview', url: websiteUrl, pageCount: siteData.pages.length },
       report: qaReport
     });
