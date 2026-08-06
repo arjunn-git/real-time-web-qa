@@ -81,6 +81,45 @@ export function extractPdfTextFromRawArrayBuffer(buffer: ArrayBuffer): string {
   return cleanPdfBinaryNoise(str);
 }
 
+/**
+ * Checks if a text line is a designer brief instruction or metadata block rather than website page body copy
+ */
+export function isMetadataOrInstructionLine(line: string): boolean {
+  const clean = line.toLowerCase().trim();
+  if (!clean) return true;
+
+  // Exclude page meta descriptors, SEO requirements, and layout instructions
+  if (clean.includes('page/meta title') || clean.includes('page title')) return true;
+  if (clean.includes('meta description')) return true;
+  if (clean.includes('h1 (hero') || clean.includes('h1:')) return true;
+  if (clean.includes('hero image button:') || clean.includes('hero image text')) return true;
+  if (clean.includes('note for the designer') || clean.includes('notes for the designer')) return true;
+  if (clean.includes('notes for the qa') || clean.includes('notes for qa')) return true;
+  
+  // Exclude navigation/design action notations like "Text > page" or "[Lift Maintenance] > Relevant Service Page"
+  if (clean.includes('text > page')) return true;
+  if (clean.includes('yell.com/reviews')) return true;
+  if (clean.match(/\[.*\]\s*>\s*(button|relevant service page|link to|form\/email)/i)) return true;
+  if (clean.match(/^notes?\s+for\s+/i)) return true;
+  if (clean.includes('site map:')) return true;
+  if (clean.includes('google my business:')) return true;
+  if (clean.includes('review us:')) return true;
+  if (clean.includes('enquire now')) return true;
+
+  // Exclude contact headers if they are just labeled fields:
+  if (clean.startsWith('company name:')) return true;
+  if (clean.startsWith('main address')) return true;
+  if (clean.startsWith('social media')) return true;
+  if (clean.startsWith('open 24/7')) return true;
+
+  // Exclude CTA fields
+  if (clean.startsWith('title:') && clean.length < 120) return true;
+  if (clean.startsWith('text:') && clean.length < 200) return true;
+  if (clean.startsWith('button:') && clean.length < 120) return true;
+  
+  return false;
+}
+
 export function parseDocumentToHierarchyClient(rawText: string, html?: string): { pages: any[] } {
   const pages: any[] = [];
 
@@ -89,10 +128,11 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
     try {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
-      let currentPage: any = { name: 'Home', sections: [] };
+      let currentPage: any = null;
       let currentSection: any = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
 
       const commitSection = () => {
+        if (!currentPage) return;
         if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0 || currentSection.buttons.length > 0) {
           currentPage.sections.push({ ...currentSection });
           currentSection = { name: 'General', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
@@ -105,15 +145,33 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
         const tagName = el.tagName.toLowerCase();
         const textVal = (el.textContent || '').trim();
 
-        if (tagName === 'hr') {
-          commitSection();
-          if (currentPage.sections.length > 0) {
-            pages.push({ ...currentPage });
+        // Check for page divider, e.g. "Home (Page 1)"
+        const pageMatch = textVal.match(/^(.*?)\s*\(Page\s*(\d+)\)$/i);
+        if (pageMatch) {
+          if (currentPage) {
+            commitSection();
+            if (currentPage.sections.length > 0) {
+              pages.push({ ...currentPage });
+            }
           }
-          currentPage = { name: `Page ${pages.length + 1}`, sections: [] };
+          currentPage = { name: pageMatch[1].trim(), sections: [] };
           currentSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
           return;
         }
+
+        if (tagName === 'hr') {
+          if (currentPage) {
+            commitSection();
+            if (currentPage.sections.length > 0) {
+              pages.push({ ...currentPage });
+            }
+            currentPage = { name: `Page ${pages.length + 1}`, sections: [] };
+            currentSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+          }
+          return;
+        }
+
+        if (!currentPage) return; // Skip content before first page division
 
         if (/^h[1-6]$/.test(tagName)) {
           commitSection();
@@ -138,19 +196,25 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
 
         if (tagName === 'ul' || tagName === 'ol') {
           el.querySelectorAll('li').forEach((li) => {
-            currentSection.lists.push((li.textContent || '').trim());
+            const liText = (li.textContent || '').trim();
+            if (liText && !isMetadataOrInstructionLine(liText)) {
+              currentSection.lists.push(liText);
+            }
           });
           return;
         }
 
         if (tagName === 'p' && textVal) {
+          if (isMetadataOrInstructionLine(textVal)) return;
           currentSection.paragraphs.push(textVal);
         }
       });
 
-      commitSection();
-      if (currentPage.sections.length > 0) {
-        pages.push(currentPage);
+      if (currentPage) {
+        commitSection();
+        if (currentPage.sections.length > 0) {
+          pages.push(currentPage);
+        }
       }
 
       if (pages.length > 0) return { pages };
@@ -159,37 +223,57 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
     }
   }
 
-  // Plaintext fallback splits by form feed (\f)
-  const pdfPages = rawText.split(/\x0c|\f/);
-  pdfPages.forEach((pageText, pIdx) => {
-    const lines = pageText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-    const page: any = { name: pIdx === 0 ? 'Home' : `Page ${pIdx + 1}`, sections: [] };
-    let currentSection: any = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+  // Plaintext fallback splits by custom Page dividers
+  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  let currentPage: any = null;
+  let currentSection: any = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
 
-    lines.forEach(line => {
-      const headingMatch = line.match(/^#{1,6}\s*(.+)$/) || line.match(/^\[(.+)\]$/);
-      const isHeading = headingMatch || (line.length < 50 && line === line.toUpperCase() && !line.match(/[.!?]$/));
-      if (isHeading) {
-        if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0 || currentSection.buttons.length > 0) {
-          page.sections.push({ ...currentSection });
-        }
-        const headingVal = headingMatch ? headingMatch[1] : line;
-        currentSection = { name: headingVal, heading: headingVal, paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
-        return;
-      }
-      if (line.match(/^[-*•\d+.]\s*(.+)$/)) {
-        currentSection.lists.push(line);
-      } else {
-        currentSection.paragraphs.push(line);
-      }
-    });
-
-    if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0) {
-      page.sections.push(currentSection);
+  const commitSectionText = () => {
+    if (!currentPage) return;
+    if (currentSection.heading || currentSection.paragraphs.length > 0 || currentSection.lists.length > 0 || currentSection.buttons.length > 0) {
+      currentPage.sections.push({ ...currentSection });
     }
-    pages.push(page);
+  };
+
+  const commitPageText = () => {
+    if (currentPage) {
+      commitSectionText();
+      if (currentPage.sections.length > 0) {
+        pages.push(currentPage);
+      }
+    }
+  };
+
+  lines.forEach(line => {
+    const pageMatch = line.match(/^(.*?)\s*\(Page\s*(\d+)\)$/i);
+    if (pageMatch) {
+      commitPageText();
+      const pageName = pageMatch[1].trim();
+      currentPage = { name: pageName, sections: [] };
+      currentSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+      return;
+    }
+
+    if (!currentPage) return; // Skip global brief parameters
+
+    if (isMetadataOrInstructionLine(line)) return;
+
+    const headingMatch = line.match(/^#{1,6}\s*(.+)$/) || line.match(/^\[(.+)\]$/);
+    const isHeading = headingMatch || (line.length < 50 && line === line.toUpperCase() && !line.match(/[.!?]$/));
+    if (isHeading) {
+      commitSectionText();
+      const headingVal = headingMatch ? headingMatch[1] : line;
+      currentSection = { name: headingVal, heading: headingVal, paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
+      return;
+    }
+    if (line.match(/^[-*•\d+.]\s*(.+)$/)) {
+      currentSection.lists.push(line);
+    } else {
+      currentSection.paragraphs.push(line);
+    }
   });
+
+  commitPageText();
 
   return { pages };
 }

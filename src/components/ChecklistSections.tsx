@@ -20,8 +20,12 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedPageFilter, setSelectedPageFilter] = useState<string>('ALL');
 
-  // Filter out Correct items: we ONLY show the missing/changed content rows to avoid p1-200 list clutter
-  const missingDiscrepancies = report.contentDiscrepancies.filter(d => d.type === '❌ Missing');
+  // Filter out Correct items and structural Page/Section checks to show only text differences
+  const missingDiscrepancies = report.contentDiscrepancies.filter(d => 
+    d.type === '❌ Missing' && 
+    !d.item.startsWith('Section Exists:') && 
+    !d.item.startsWith('Page Exists:')
+  );
 
   const filtered = missingDiscrepancies.filter(item => {
     const q = searchQuery.toLowerCase().trim();

@@ -138,22 +138,49 @@ function cleanAndNormalize(text: string): string {
 }
 
 function findMatchingPage(docPageName: string, sitePages: PageScrapeData[]): PageScrapeData | undefined {
-  const cleanDoc = docPageName.toLowerCase().trim();
-  return sitePages.find(p => {
-    const cleanSite = p.name.toLowerCase().trim();
-    if (cleanDoc === cleanSite) return true;
-    if (cleanDoc === 'home' && cleanSite === 'homepage') return true;
-    if (cleanDoc === 'homepage' && cleanSite === 'home') return true;
-    return false;
+  const norm = (s: string) => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '').trim();
+  const cleanDoc = norm(docPageName);
+  
+  let found = sitePages.find(p => norm(p.name) === cleanDoc);
+  if (found) return found;
+
+  if (cleanDoc === 'home' || cleanDoc === 'homepage') {
+    found = sitePages.find(p => {
+      const cs = norm(p.name);
+      return cs === 'home' || cs === 'homepage';
+    });
+    if (found) return found;
+  }
+
+  found = sitePages.find(p => {
+    const cs = norm(p.name);
+    return cs.includes(cleanDoc) || cleanDoc.includes(cs);
   });
+
+  return found;
 }
 
 function findMatchingSection(docSectionName: string, siteSections: any[]): any | undefined {
-  const cleanDoc = docSectionName.toLowerCase().trim();
-  return siteSections.find(s => {
-    const cleanSite = s.name.toLowerCase().trim();
-    return cleanDoc === cleanSite || (cleanDoc === 'hero' && cleanSite === 'welcome') || (cleanDoc === 'welcome' && cleanSite === 'hero');
+  const norm = (s: string) => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '').trim();
+  const cleanDoc = norm(docSectionName);
+  
+  let found = siteSections.find(s => norm(s.name) === cleanDoc);
+  if (found) return found;
+
+  if (cleanDoc === 'hero' || cleanDoc === 'welcome') {
+    found = siteSections.find(s => {
+      const cs = norm(s.name);
+      return cs === 'hero' || cs === 'welcome';
+    });
+    if (found) return found;
+  }
+
+  found = siteSections.find(s => {
+    const cs = norm(s.name);
+    return cs.includes(cleanDoc) || cleanDoc.includes(cs);
   });
+
+  return found;
 }
 
 /**
