@@ -93,6 +93,9 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
   const totalMissing = report.contentDiscrepancies.filter(d => d.type === '❌ Missing' && !d.item.startsWith('Section Exists:') && !d.item.startsWith('Page Exists:') && d.component !== 'Buttons').length;
   const totalPages = report.summaryMetrics?.totalPagesChecked ?? 1;
 
+  // Extract unique page list for website buttons
+  const uniqueBtnPages = Array.from(new Set(report.buttonsReport.items.map(b => b.page))).sort();
+
   return (
     <div className="checklist-sections-container">
       {/* 2. STRICT PAGE -> SECTION -> COMPONENT CONTENT AUDIT REPORT */}
@@ -398,24 +401,62 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
           </div>
         ) : (
           <div>
-            <h4 style={{ fontSize: '0.78rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', paddingLeft: '4px' }}>
-              📋 All Crawled Website Buttons List
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', paddingLeft: '4px' }}>
+              📋 Website Button Links Grouped Page-by-Page
             </h4>
-            <div className="buttons-grid">
-              {report.buttonsReport.items.map((btn, idx) => (
-                <div key={idx} className="button-item-card">
-                  <div className="btn-name-group">
-                    <span className="btn-text">"{btn.name}"</span>
-                    <span className="btn-page">({btn.page})</span>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '16px', paddingLeft: '4px' }}>
+              Shows all interactive CTA buttons detected on each crawled page of the website and where they link.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {uniqueBtnPages.map(pageName => {
+                const pageBtns = report.buttonsReport.items.filter(b => b.page === pageName);
+                if (pageBtns.length === 0) return null;
+
+                return (
+                  <div key={pageName} style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: 800, color: 'var(--accent-cyan)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>📄 Page: {pageName}</span>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '8px', color: '#cbd5e1' }}>
+                        {pageBtns.length} Buttons Found
+                      </span>
+                    </div>
+
+                    <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {/* Header row */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 3.5fr 1.5fr 1fr', gap: '12px', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span>Button Label</span>
+                        <span>Website Target URL / Anchor</span>
+                        <span>Action Type</span>
+                        <span style={{ textAlign: 'right' }}>Status</span>
+                      </div>
+
+                      {/* Row list */}
+                      {pageBtns.map((btn, idx) => (
+                        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 3.5fr 1.5fr 1fr', gap: '12px', fontSize: '0.78rem', alignItems: 'center', background: 'rgba(0,0,0,0.12)', padding: '8px 12px', borderRadius: '8px' }}>
+                          <span style={{ fontWeight: 700, color: '#fff' }}>"{btn.name}"</span>
+                          <span style={{ color: '#38bdf8', fontFamily: 'monospace', wordBreak: 'break-all', fontSize: '0.72rem' }}>
+                            {btn.href || 'None'}
+                          </span>
+                          <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>{btn.actionType}</span>
+                          <span style={{ 
+                            fontSize: '0.65rem', 
+                            fontWeight: 800, 
+                            padding: '2px 6px', 
+                            borderRadius: '4px', 
+                            textAlign: 'center',
+                            background: btn.isValid ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                            color: btn.isValid ? '#34d399' : '#f87171',
+                            marginLeft: 'auto'
+                          }}>
+                            {btn.isValid ? 'VALID' : 'BROKEN'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="btn-status-group">
-                    <span className="btn-href">Target: {btn.href}</span>
-                    <span className={`btn-status-pill ${btn.isValid ? 'working' : 'missing-link'}`}>
-                      {btn.isValid ? `✓ ${btn.statusLabel}` : '⚠ Missing Action'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
