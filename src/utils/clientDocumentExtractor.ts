@@ -29,56 +29,44 @@ export function cleanPdfBinaryNoise(text: string): string {
 }
 
 /**
- * Extracts real text strings from PDF Tj and TJ text stream operators
+ * Extracts decompressed text page-by-page from PDF files using PDF.js
  */
-export function extractPdfTextFromRawArrayBuffer(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let str = '';
-  const chunkSize = 8192;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    str += String.fromCharCode.apply(null, Array.from(chunk));
+export async function extractPdfTextViaPdfJs(file: File): Promise<string> {
+  const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
+  if (!pdfjsLib) {
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load PDF.js CDN'));
+      document.head.appendChild(script);
+    });
   }
 
-  const textChunks: string[] = [];
+  const pdfjs = (window as any)['pdfjs-dist/build/pdf'];
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  // Extract text inside (string) Tj or (string) TJ
-  const tjRegex = /\(([^)]+)\)\s*T[jJ]/g;
-  let match;
-  while ((match = tjRegex.exec(str)) !== null) {
-    const rawSnippet = match[1]
-      .replace(/\\\( /g, '(')
-      .replace(/\\\)/g, ')')
-      .replace(/\\n/g, '\n')
-      .replace(/\\r/g, '')
-      .replace(/\\t/g, ' ')
-      .trim();
-    if (rawSnippet && rawSnippet.length > 1 && !rawSnippet.startsWith('/')) {
-      textChunks.push(rawSnippet);
-    }
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+  const pdf = await loadingTask.promise;
+  
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    
+    // Sort text blocks by transform coordinates to preserve reading order: Top-to-Bottom, Left-to-Right
+    const items: any[] = textContent.items;
+    items.sort((a, b) => {
+      const yDiff = b.transform[5] - a.transform[5];
+      if (Math.abs(yDiff) > 5) return yDiff; // Different line
+      return a.transform[4] - b.transform[4]; // Same line, sort left-to-right
+    });
+
+    const pageText = items.map(item => item.str).join('\n');
+    fullText += pageText + '\n\f';
   }
-
-  // Extract text inside array TJ: [ (text1) 12 (text2) ] TJ
-  const arrayTjRegex = /\[\s*((?:\([^)]*\)\s*|-?\d+\s*)+)\]\s*TJ/gi;
-  while ((match = arrayTjRegex.exec(str)) !== null) {
-    const innerArray = match[1];
-    const subMatches = innerArray.match(/\(([^)]+)\)/g);
-    if (subMatches) {
-      const combined = subMatches
-        .map(m => m.slice(1, -1))
-        .join('')
-        .trim();
-      if (combined && combined.length > 1) {
-        textChunks.push(combined);
-      }
-    }
-  }
-
-  if (textChunks.length > 0) {
-    return cleanPdfBinaryNoise(textChunks.join('\n'));
-  }
-
-  return cleanPdfBinaryNoise(str);
+  return fullText;
 }
 
 /**
@@ -302,14 +290,13 @@ export async function extractTextFromClientFile(file: File): Promise<{ title: st
 
   if (ext === 'pdf') {
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const extractedPdfText = extractPdfTextFromRawArrayBuffer(arrayBuffer);
+      const extractedPdfText = await extractPdfTextViaPdfJs(file);
       if (extractedPdfText && extractedPdfText.length > 5) {
         const structuredContent = parseDocumentToHierarchyClient(extractedPdfText);
         return { title: name, rawText: extractedPdfText, structuredContent };
       }
     } catch (e) {
-      console.warn('Client PDF ArrayBuffer extraction failed:', e);
+      console.warn('Client PDF extraction using PDF.js failed, falling back to FileReader:', e);
     }
   }
 
