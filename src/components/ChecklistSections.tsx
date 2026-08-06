@@ -19,15 +19,21 @@ interface ChecklistSectionsProps {
 export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedPageFilter, setSelectedPageFilter] = useState<string>('ALL');
+  const [showOnlyChanges, setShowOnlyChanges] = useState<boolean>(true);
 
-  // Filter out Correct items and structural Page/Section checks to show only text differences
-  const missingDiscrepancies = report.contentDiscrepancies.filter(d => 
-    d.type === '❌ Missing' && 
+  // Filter out structural checks from the main content view
+  const contentItems = report.contentDiscrepancies.filter(d => 
     !d.item.startsWith('Section Exists:') && 
     !d.item.startsWith('Page Exists:')
   );
 
-  const filtered = missingDiscrepancies.filter(item => {
+  // Apply search/page filters
+  const filtered = contentItems.filter(item => {
+    // Apply changes-only toggle
+    if (showOnlyChanges && item.type !== '❌ Missing') {
+      return false;
+    }
+
     const q = searchQuery.toLowerCase().trim();
     if (q) {
       return (
@@ -51,14 +57,14 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
     groupedByPage[pageName].push(item);
   });
 
-  const uniquePages = Array.from(new Set(missingDiscrepancies.map(d => d.page || 'Home'))).filter(Boolean);
+  const uniquePages = Array.from(new Set(contentItems.map(d => d.page || 'Home'))).filter(Boolean);
 
   // Export filtered changes to CSV
   const handleExportExcel = () => {
-    const headers = ['Page', 'Change Required / Item', 'Expected in Document', 'Found on Website', 'Recommendation'];
+    const headers = ['Page', 'Status', 'Expected in Document', 'Found on Website', 'Recommendation'];
     const rows = filtered.map(d => [
       d.page || 'Home',
-      d.item,
+      d.type,
       d.expected,
       d.found,
       d.recommendation || ''
@@ -80,7 +86,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
 
   // Metrics counters
   const totalCorrect = report.summaryMetrics?.totalCorrect ?? report.contentDiscrepancies.filter(d => d.type === '✅ Correct').length;
-  const totalMissing = missingDiscrepancies.length;
+  const totalMissing = report.contentDiscrepancies.filter(d => d.type === '❌ Missing' && !d.item.startsWith('Section Exists:') && !d.item.startsWith('Page Exists:')).length;
   const totalPages = report.summaryMetrics?.totalPagesChecked ?? 1;
 
   return (
@@ -92,7 +98,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
             <FileSearch className="section-icon cyan" size={22} />
             <div>
               <h3>2. Website Content Changes Needed</h3>
-              <p>Direct page-level list of content missing or incorrect on the website compared to the document</p>
+              <p>Direct side-by-side comparison of document specifications and live website copy</p>
             </div>
           </div>
 
@@ -126,14 +132,14 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
 
         {/* Filters and search toolbar */}
         <div className="filters-toolbar" style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             {/* Search */}
             <div style={{ position: 'relative' }}>
               <Search size={14} style={{ position: 'absolute', left: '10px', top: '11px', color: '#94a3b8' }} />
               <input
                 type="text"
                 className="input-field"
-                placeholder="Search missing text or pages..."
+                placeholder="Search text or pages..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{ paddingLeft: '32px', margin: 0, fontSize: '0.8rem', height: '36px' }}
@@ -145,6 +151,26 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
               <option value="ALL">All Pages</option>
               {uniquePages.map((p, i) => <option key={i} value={p}>{p}</option>)}
             </select>
+
+            {/* View Mode Toggle */}
+            <div className="input-options-tabs" style={{ margin: 0, display: 'flex', height: '36px' }}>
+              <button 
+                type="button" 
+                className={`option-tab-btn ${showOnlyChanges ? 'active' : ''}`}
+                onClick={() => setShowOnlyChanges(true)}
+                style={{ flex: 1, padding: '0 8px', fontSize: '0.75rem' }}
+              >
+                Errors Only
+              </button>
+              <button 
+                type="button" 
+                className={`option-tab-btn ${!showOnlyChanges ? 'active' : ''}`}
+                onClick={() => setShowOnlyChanges(false)}
+                style={{ flex: 1, padding: '0 8px', fontSize: '0.75rem' }}
+              >
+                Show All
+              </button>
+            </div>
           </div>
         </div>
 
@@ -152,7 +178,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
         {Object.keys(groupedByPage).length === 0 ? (
           <div className="clean-passed-box">
             <CheckCircle2 size={20} />
-            <span>✓ Excellent! All document content is fully present on the website page(s). Zero discrepancies.</span>
+            <span>✓ Excellent! All document content matches the website page(s) successfully. Zero discrepancies found.</span>
           </div>
         ) : (
           <div className="grouped-tree-container">
@@ -160,48 +186,103 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
               const items = groupedByPage[pageName];
 
               return (
-                <div key={pageName} className="tree-page-group" style={{ marginBottom: '20px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                <div key={pageName} className="tree-page-group" style={{ marginBottom: '24px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
                   <div style={{ padding: '14px 20px', background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
                       📄 Page: {pageName}
                     </span>
-                    <span style={{ fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '3px 12px', borderRadius: '12px', fontWeight: 700 }}>
-                      {items.length} Changes Required
+                    <span style={{ fontSize: '0.8rem', background: showOnlyChanges ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.08)', color: showOnlyChanges ? '#f87171' : '#fff', padding: '3px 12px', borderRadius: '12px', fontWeight: 700 }}>
+                      {items.length} {showOnlyChanges ? 'Changes Required' : 'Lines Displayed'}
                     </span>
                   </div>
 
-                  <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {items.map((item, idx) => (
-                      <div 
-                        key={idx} 
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.25)',
-                          border: '1px solid rgba(239, 68, 68, 0.2)',
-                          borderLeft: '5px solid #ef4444',
-                          borderRadius: '8px',
-                          padding: '14px 18px'
-                        }}
-                      >
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff', marginBottom: '10px', lineHeight: 1.4 }}>
-                          Change #{idx + 1}: Missing Content
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', background: 'rgba(0, 0, 0, 0.15)', padding: '10px 14px', borderRadius: '6px', fontSize: '0.8rem', marginBottom: '10px' }}>
-                          <div>
-                            <span style={{ color: 'var(--accent-cyan)', display: 'block', fontSize: '0.68rem', fontWeight: 700, marginBottom: '4px', letterSpacing: '0.5px' }}>EXPECTED IN DOC:</span>
-                            <span style={{ color: '#f1f5f9', lineHeight: 1.5 }}>{item.expected}</span>
-                          </div>
-                          <div>
-                            <span style={{ color: '#f87171', display: 'block', fontSize: '0.68rem', fontWeight: 700, marginBottom: '4px', letterSpacing: '0.5px' }}>FOUND ON WEBSITE:</span>
-                            <span style={{ color: '#cbd5e1', lineHeight: 1.5 }}>{item.found || 'None'}</span>
-                          </div>
-                        </div>
-
-                        <div style={{ background: 'rgba(239, 68, 68, 0.06)', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid #ef4444', fontSize: '0.78rem', color: '#cbd5e1' }}>
-                          <span style={{ color: '#f87171', fontWeight: 700 }}>RECOMMENDATION:</span> {item.recommendation}
-                        </div>
+                  {/* SIDE-BY-SIDE GRID VIEW */}
+                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    
+                    {/* Headers */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        🌐 Website Content (Actual / Wrong)
                       </div>
-                    ))}
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        📄 Document Content (Expected / Correct)
+                      </div>
+                    </div>
+
+                    {/* Content Rows */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {items.map((item, idx) => {
+                        const isCorrect = item.type === '✅ Correct';
+                        return (
+                          <div 
+                            key={idx} 
+                            style={{ 
+                              display: 'grid', 
+                              gridTemplateColumns: '1fr 1fr', 
+                              gap: '20px', 
+                              alignItems: 'stretch'
+                            }}
+                          >
+                            {/* Left Side: Website Content */}
+                            <div 
+                              style={{
+                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(239, 68, 68, 0.05)',
+                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.2)'}`,
+                                borderLeft: `4px solid ${isCorrect ? '#10b981' : '#ef4444'}`,
+                                borderRadius: '8px',
+                                padding: '12px 16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              {isCorrect ? (
+                                <div style={{ color: '#cbd5e1', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                                  {item.found || item.expected}
+                                </div>
+                              ) : (
+                                <div>
+                                  <div style={{ color: '#f87171', fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
+                                    ❌ Wrong / Missing
+                                  </div>
+                                  <div style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                                    Found: {item.found || 'None'}
+                                  </div>
+                                  {item.recommendation && (
+                                    <div style={{ fontSize: '0.72rem', color: '#cbd5e1', background: 'rgba(239, 68, 68, 0.1)', padding: '6px 10px', borderRadius: '4px', marginTop: '6px' }}>
+                                      <strong>Fix:</strong> {item.recommendation}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right Side: Document Content (Correct) */}
+                            <div 
+                              style={{
+                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(245, 158, 11, 0.03)',
+                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'}`,
+                                borderLeft: `4px solid ${isCorrect ? '#10b981' : '#f59e0b'}`,
+                                borderRadius: '8px',
+                                padding: '12px 16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <div style={{ color: isCorrect ? '#34d399' : '#facc15', fontSize: '0.7rem', fontWeight: 800, marginBottom: '4px', textTransform: 'uppercase' }}>
+                                {isCorrect ? '✓ Matched' : '★ Correct spec copy'}
+                              </div>
+                              <div style={{ color: '#fff', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                                {item.expected}
+                              </div>
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+
                   </div>
                 </div>
               );
