@@ -37,16 +37,7 @@ function classifySection(title: string): string {
   return 'General';
 }
 
-/**
- * Standard list of CTA button phrase recognizers
- */
-function isCtaText(text: string): boolean {
-  const clean = text.trim();
-  if (clean.length > 40 || clean.length < 2) return false;
-  const lower = clean.toLowerCase();
-  return !!lower.match(/^(book|schedule|get|claim|call|contact|start|submit|download|request|order|buy|enquire|estimate|find)\b/i) ||
-         !!lower.match(/\b(now|free|survey|quote|today|consultation)\b/i);
-}
+
 
 /**
  * Normalizes double spaces, non-breaking spaces, and empty content
@@ -62,6 +53,15 @@ function normalizeString(text: string): string {
 /**
  * Checks if a text line is a designer brief instruction or metadata block rather than website page body copy
  */
+export function isButtonLine(line: string): boolean {
+  const clean = line.toLowerCase().trim();
+  if (clean.includes('hero image button:')) return true;
+  if (clean.startsWith('button:')) return true;
+  if (clean.includes('] >') && clean.startsWith('[')) return true;
+  if (clean.includes('> link to')) return true;
+  return false;
+}
+
 export function isMetadataOrInstructionLine(line: string): boolean {
   const clean = line.toLowerCase().trim();
   if (!clean) return true;
@@ -70,14 +70,12 @@ export function isMetadataOrInstructionLine(line: string): boolean {
   if (clean.includes('page/meta title') || clean.includes('page title')) return true;
   if (clean.includes('meta description')) return true;
   if (clean.includes('h1 (hero') || clean.includes('h1:')) return true;
-  if (clean.includes('hero image button:') || clean.includes('hero image text')) return true;
   if (clean.includes('note for the designer') || clean.includes('notes for the designer')) return true;
   if (clean.includes('notes for the qa') || clean.includes('notes for qa')) return true;
   
-  // Exclude navigation/design action notations like "Text > page" or "[Lift Maintenance] > Relevant Service Page"
+  // Exclude navigation/design action notations like "Text > page"
   if (clean.includes('text > page')) return true;
   if (clean.includes('yell.com/reviews')) return true;
-  if (clean.match(/\[.*\]\s*>\s*(button|relevant service page|link to|form\/email)/i)) return true;
   if (clean.match(/^notes?\s+for\s+/i)) return true;
   if (clean.includes('site map:')) return true;
   if (clean.includes('google my business:')) return true;
@@ -93,7 +91,6 @@ export function isMetadataOrInstructionLine(line: string): boolean {
   // Exclude CTA fields
   if (clean.startsWith('title:') && clean.length < 120) return true;
   if (clean.startsWith('text:') && clean.length < 200) return true;
-  if (clean.startsWith('button:') && clean.length < 120) return true;
   
   return false;
 }
@@ -207,7 +204,7 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
           if (isMetadataOrInstructionLine(textVal)) return;
 
           // Check if this looks like a button/CTA
-          if (isCtaText(textVal)) {
+          if (isButtonLine(textVal)) {
             currentSection.buttons.push(textVal);
           } else if (textVal.toLowerCase().includes('form') && (textVal.includes(':') || textVal.includes('input'))) {
             currentSection.forms = currentSection.forms || [];
@@ -298,7 +295,13 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
 
     if (isMetadataOrInstructionLine(line)) return;
 
-    // 1. Detect Headings
+    // 1. CTA Buttons (Check BEFORE headings to prevent [Button] > Link matching heading pattern)
+    if (isButtonLine(line)) {
+      currentSection.buttons.push(line);
+      return;
+    }
+
+    // 2. Detect Headings
     const headingMatch = line.match(/^#{1,6}\s*(.+)$/) || line.match(/^\[(.+)\]$/);
     const isHeadingMatch = headingMatch || (line.length < 50 && !line.match(/[.!?]$/) && line.toUpperCase() === line);
 
@@ -317,16 +320,10 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
       return;
     }
 
-    // 2. Lists (starts with list bullet or number)
+    // 3. Lists (starts with list bullet or number)
     const listMatch = line.match(/^[-*•\d+.]\s*(.+)$/);
     if (listMatch) {
       currentSection.lists.push(listMatch[1]);
-      return;
-    }
-
-    // 3. CTA Buttons
-    if (isCtaText(line)) {
-      currentSection.buttons.push(line);
       return;
     }
 

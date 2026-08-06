@@ -233,11 +233,25 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
         const linksData = [];
 
         allInteractive.forEach(el => {
-          const text = (el.textContent || el.getAttribute('value') || '').trim();
+          let text = (el.textContent || el.getAttribute('value') || '').trim();
+          // Normalize spaces and double spaces inside text
+          text = text.replace(/\s+/g, ' ');
           const href = el.getAttribute('href') || '';
           if (!text || text.length < 1) return;
 
           if (isButton(el)) {
+            // Ignore card containers that wrap long paragraph text blocks
+            if (text.length > 50) {
+              // Push as standard internal link instead of CTA button
+              linksData.push({
+                text: text.substring(0, 40) + '...',
+                href,
+                type: (href.startsWith('http') && !href.includes(window.location.hostname)) ? 'external' : 'internal',
+                isBroken: false,
+                isMissing: !href || href === '#'
+              });
+              return;
+            }
             const cl = classifyButtonAction(el);
             buttonsData.push({ text, href, actionType: cl.actionType, isValid: cl.isValid, statusLabel: cl.statusLabel });
           } else {

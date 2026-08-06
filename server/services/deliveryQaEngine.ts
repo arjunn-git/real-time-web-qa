@@ -364,8 +364,20 @@ export function runDeliveryQaEngine(
 
       // 6. Match Buttons & Button Links
       if (docSec.buttons && docSec.buttons.length > 0) {
-        docSec.buttons.forEach((btn: string) => {
-          const cleanDocBtn = cleanAndNormalize(btn);
+        docSec.buttons.forEach((btnSpec: string) => {
+          let btnText = btnSpec;
+          let docIntent = 'Button Action';
+
+          let cleanSpec = btnSpec.replace(/^(hero image button:|button:)/i, '').trim();
+          if (cleanSpec.includes('>')) {
+            const parts = cleanSpec.split('>');
+            btnText = parts[0].replace(/[\[\]]/g, '').trim();
+            docIntent = parts[1].trim();
+          } else if (cleanSpec.startsWith('[') && cleanSpec.endsWith(']')) {
+            btnText = cleanSpec.slice(1, -1).trim();
+          }
+
+          const cleanDocBtn = cleanAndNormalize(btnText);
           const match = sitePage.buttons.some(b => cleanAndNormalize(b.text).includes(cleanDocBtn)) ||
                         cleanAndNormalize(sitePage.visibleText).includes(cleanDocBtn) ||
                         siteSections.some((sec: any) => sec.buttons && sec.buttons.some((b: string) => cleanAndNormalize(b).includes(cleanDocBtn)));
@@ -376,9 +388,9 @@ export function runDeliveryQaEngine(
             pageName,
             secName,
             'Buttons',
-            `CTA Button: ${btn}`,
-            btn,
-            match ? btn : 'None'
+            `CTA Button: ${btnText}`,
+            `${btnText} (${docIntent})`,
+            match ? btnText : 'None'
           );
           if (!match) missingContentCount++;
         });

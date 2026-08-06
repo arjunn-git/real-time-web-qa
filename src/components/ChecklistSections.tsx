@@ -24,8 +24,12 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
   // Filter out structural checks from the main content view
   const contentItems = report.contentDiscrepancies.filter(d => 
     !d.item.startsWith('Section Exists:') && 
-    !d.item.startsWith('Page Exists:')
+    !d.item.startsWith('Page Exists:') &&
+    d.component !== 'Buttons' // Exclude buttons here since they have their own validation section!
   );
+
+  // Expected buttons extracted from contentDiscrepancies
+  const docButtons = report.contentDiscrepancies.filter(d => d.component === 'Buttons');
 
   // Apply search/page filters
   const filtered = contentItems.filter(item => {
@@ -85,8 +89,8 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
   };
 
   // Metrics counters
-  const totalCorrect = report.summaryMetrics?.totalCorrect ?? report.contentDiscrepancies.filter(d => d.type === '✅ Correct').length;
-  const totalMissing = report.contentDiscrepancies.filter(d => d.type === '❌ Missing' && !d.item.startsWith('Section Exists:') && !d.item.startsWith('Page Exists:')).length;
+  const totalCorrect = report.summaryMetrics?.totalCorrect ?? report.contentDiscrepancies.filter(d => d.type === '✅ Correct' && d.component !== 'Buttons').length;
+  const totalMissing = report.contentDiscrepancies.filter(d => d.type === '❌ Missing' && !d.item.startsWith('Section Exists:') && !d.item.startsWith('Page Exists:') && d.component !== 'Buttons').length;
   const totalPages = report.summaryMetrics?.totalPagesChecked ?? 1;
 
   return (
@@ -324,27 +328,95 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
           )}
         </div>
 
+        {/* 🔘 Button Destination Mapping & Intent Report Table */}
+        {docButtons.length > 0 && (
+          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '20px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🔘 Button Destination Mapping & Intent Report</span>
+            </h4>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '16px' }}>
+              Compares document expected button clicks and targets with actual live wix links scraped.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr 1.8fr 2.2fr 1fr', gap: '12px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                <span>Located Page</span>
+                <span>Button Text</span>
+                <span>Expected Destination (Doc)</span>
+                <span>Actual Destination (Web)</span>
+                <span>Status</span>
+              </div>
+
+              {/* Rows */}
+              {docButtons.map((docBtn, idx) => {
+                const btnName = docBtn.item.replace('CTA Button: ', '');
+                const cleanDocBtn = btnName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+                const webBtn = report.buttonsReport.items.find(b => 
+                  b.page.toLowerCase() === docBtn.page.toLowerCase() &&
+                  b.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanDocBtn)
+                );
+                
+                // Extract target from "Get In Touch (Link to)"
+                const intentStr = docBtn.expected.includes('(') 
+                  ? docBtn.expected.split('(')[1].replace(')', '') 
+                  : 'Button Link';
+                  
+                const actualHref = webBtn ? webBtn.href : 'Not Found';
+                const isCorrect = docBtn.type === '✅ Correct';
+
+                return (
+                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr 1.8fr 2.2fr 1fr', gap: '12px', alignItems: 'center', background: 'rgba(0,0,0,0.15)', padding: '10px 14px', borderRadius: '8px', fontSize: '0.78rem' }}>
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>{docBtn.page}</span>
+                    <span style={{ color: '#fff', fontWeight: 700 }}>"{btnName}"</span>
+                    <span style={{ color: '#facc15', fontWeight: 600 }}>{intentStr}</span>
+                    <span style={{ color: actualHref === 'Not Found' ? '#f87171' : '#38bdf8', wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.72rem' }}>
+                      {actualHref}
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.65rem', 
+                      fontWeight: 800, 
+                      padding: '3px 8px', 
+                      borderRadius: '6px', 
+                      textAlign: 'center',
+                      background: isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: isCorrect ? '#34d399' : '#f87171'
+                    }}>
+                      {isCorrect ? '✅ MATCH' : '❌ MISSING'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {report.buttonsReport.items.length === 0 ? (
           <div className="clean-passed-box">
             <CheckCircle2 size={20} />
             <span>✓ No button issues found across detected website pages.</span>
           </div>
         ) : (
-          <div className="buttons-grid">
-            {report.buttonsReport.items.map((btn, idx) => (
-              <div key={idx} className="button-item-card">
-                <div className="btn-name-group">
-                  <span className="btn-text">"{btn.name}"</span>
-                  <span className="btn-page">({btn.page})</span>
+          <div>
+            <h4 style={{ fontSize: '0.78rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', paddingLeft: '4px' }}>
+              📋 All Crawled Website Buttons List
+            </h4>
+            <div className="buttons-grid">
+              {report.buttonsReport.items.map((btn, idx) => (
+                <div key={idx} className="button-item-card">
+                  <div className="btn-name-group">
+                    <span className="btn-text">"{btn.name}"</span>
+                    <span className="btn-page">({btn.page})</span>
+                  </div>
+                  <div className="btn-status-group">
+                    <span className="btn-href">Target: {btn.href}</span>
+                    <span className={`btn-status-pill ${btn.isValid ? 'working' : 'missing-link'}`}>
+                      {btn.isValid ? `✓ ${btn.statusLabel}` : '⚠ Missing Action'}
+                    </span>
+                  </div>
                 </div>
-                <div className="btn-status-group">
-                  <span className="btn-href">Target: {btn.href}</span>
-                  <span className={`btn-status-pill ${btn.isValid ? 'working' : 'missing-link'}`}>
-                    {btn.isValid ? `✓ ${btn.statusLabel}` : '⚠ Missing Action'}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
