@@ -275,9 +275,10 @@ export function runDeliveryQaEngine(
       // 3. Match Heading
       if (docSec.heading) {
         const expH = docSec.heading;
-        const foundH = siteSec.heading || '';
-        const match = cleanAndNormalize(foundH).includes(cleanAndNormalize(expH)) ||
-                      cleanAndNormalize(expH).includes(cleanAndNormalize(foundH));
+        const cleanDocVal = cleanAndNormalize(expH);
+        const match = cleanAndNormalize(sitePage.visibleText).includes(cleanDocVal) ||
+                      sitePage.h1.some(h => cleanAndNormalize(h).includes(cleanDocVal)) ||
+                      siteSections.some((sec: any) => cleanAndNormalize(sec.heading || '').includes(cleanDocVal));
 
         contentDiscrepancyAdd(
           contentDiscrepancies,
@@ -287,7 +288,7 @@ export function runDeliveryQaEngine(
           'Heading',
           `Heading: ${expH.substring(0, 45)}`,
           expH,
-          match ? foundH : (foundH || 'None')
+          match ? expH : 'None'
         );
         if (!match) missingContentCount++;
       }
@@ -296,10 +297,8 @@ export function runDeliveryQaEngine(
       if (docSec.paragraphs && docSec.paragraphs.length > 0) {
         docSec.paragraphs.forEach((para: string, idx: number) => {
           const cleanDocPara = cleanAndNormalize(para);
-          const match = siteSec.paragraphs && siteSec.paragraphs.some((sitePara: string) => {
-            const cleanSitePara = cleanAndNormalize(sitePara);
-            return cleanSitePara.includes(cleanDocPara) || cleanDocPara.includes(cleanSitePara);
-          });
+          const match = cleanAndNormalize(sitePage.visibleText).includes(cleanDocPara) ||
+                        siteSections.some((sec: any) => sec.paragraphs && sec.paragraphs.some((p: string) => cleanAndNormalize(p).includes(cleanDocPara)));
 
           contentDiscrepancyAdd(
             contentDiscrepancies,
@@ -319,10 +318,8 @@ export function runDeliveryQaEngine(
       if (docSec.lists && docSec.lists.length > 0) {
         docSec.lists.forEach((listVal: string, idx: number) => {
           const cleanDocList = cleanAndNormalize(listVal);
-          const match = siteSec.lists && siteSec.lists.some((siteList: string) => {
-            const cleanSiteList = cleanAndNormalize(siteList);
-            return cleanSiteList.includes(cleanDocList) || cleanDocList.includes(cleanSiteList);
-          });
+          const match = cleanAndNormalize(sitePage.visibleText).includes(cleanDocList) ||
+                        siteSections.some((sec: any) => sec.lists && sec.lists.some((l: string) => cleanAndNormalize(l).includes(cleanDocList)));
 
           contentDiscrepancyAdd(
             contentDiscrepancies,
@@ -342,9 +339,9 @@ export function runDeliveryQaEngine(
       if (docSec.buttons && docSec.buttons.length > 0) {
         docSec.buttons.forEach((btn: string) => {
           const cleanDocBtn = cleanAndNormalize(btn);
-          const match = siteSec.buttons && siteSec.buttons.some((siteBtn: string) => {
-            return cleanAndNormalize(siteBtn).includes(cleanDocBtn);
-          });
+          const match = sitePage.buttons.some(b => cleanAndNormalize(b.text).includes(cleanDocBtn)) ||
+                        cleanAndNormalize(sitePage.visibleText).includes(cleanDocBtn) ||
+                        siteSections.some((sec: any) => sec.buttons && sec.buttons.some((b: string) => cleanAndNormalize(b).includes(cleanDocBtn)));
 
           contentDiscrepancyAdd(
             contentDiscrepancies,
@@ -364,9 +361,9 @@ export function runDeliveryQaEngine(
       if (docSec.forms && docSec.forms.length > 0) {
         docSec.forms.forEach((formVal: string) => {
           const cleanDocForm = cleanAndNormalize(formVal);
-          const match = siteSec.forms && siteSec.forms.some((siteForm: string) => {
-            return cleanAndNormalize(siteForm).includes(cleanDocForm);
-          });
+          const match = sitePage.forms.length > 0 ||
+                        cleanAndNormalize(sitePage.visibleText).includes(cleanDocForm) ||
+                        siteSections.some((sec: any) => sec.forms && sec.forms.some((f: string) => cleanAndNormalize(f).includes(cleanDocForm)));
 
           contentDiscrepancyAdd(
             contentDiscrepancies,
@@ -376,7 +373,7 @@ export function runDeliveryQaEngine(
             'Forms',
             `Form Description`,
             formVal,
-            match ? 'Form verified in section' : 'None'
+            match ? 'Form verified' : 'None'
           );
           if (!match) missingContentCount++;
         });
