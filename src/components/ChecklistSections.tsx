@@ -367,12 +367,35 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                   btnName = btnName.slice(1, -1).trim();
                 }
 
-                const cleanDocBtn = btnName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-                const webBtn = report.buttonsReport.items.find(b => 
-                  b.page.toLowerCase() === docBtn.page.toLowerCase() &&
-                  b.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanDocBtn)
+                const pageNorm = (docBtn.page || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '').trim();
+                const nameNorm = btnName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+
+                // 1. Try finding in buttons on the same page
+                let webBtn = report.buttonsReport.items.find(b => 
+                  (b.page || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '').trim() === pageNorm &&
+                  (b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '').includes(nameNorm)
                 );
+
+                // 2. Try finding in buttons globally on any page
+                if (!webBtn) {
+                  webBtn = report.buttonsReport.items.find(b => 
+                    (b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '').includes(nameNorm)
+                  );
+                }
                 
+                let actualHref = 'Not Found';
+                if (webBtn) {
+                  actualHref = webBtn.href;
+                } else {
+                  // 3. Fallback: search in general crawled links list
+                  const webLink = report.linksReport.items.find(l => 
+                    (l.name || '').toLowerCase().replace(/[^a-z0-9]/g, '').includes(nameNorm)
+                  );
+                  if (webLink) {
+                    actualHref = webLink.href;
+                  }
+                }
+
                 let intentStr = docBtn.expected.includes('(') 
                   ? docBtn.expected.split('(')[1].replace(')', '') 
                   : 'Button Link';
@@ -381,7 +404,6 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                   intentStr = intentStr.split('>')[1]?.trim() || intentStr;
                 }
                   
-                const actualHref = webBtn ? webBtn.href : 'Not Found';
                 const isCorrect = docBtn.type === '✅ Correct' && actualHref !== 'Not Found';
 
                 return (
