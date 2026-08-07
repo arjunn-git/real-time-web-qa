@@ -67,6 +67,7 @@ export interface FullWebsiteScrapeResult {
     linkedin: 'Working' | 'Missing';
     facebook: 'Working' | 'Missing';
     twitter: 'Working' | 'Missing';
+    socialLinks?: Array<{ platform: string; href: string }>;
   };
 }
 
@@ -174,6 +175,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
     let globalLinkedIn: 'Working' | 'Missing' = 'Missing';
     let globalFB: 'Working' | 'Missing' = 'Missing';
     let globalTwitter: 'Working' | 'Missing' = 'Missing';
+    let globalSocialLinks: Array<{ platform: string; href: string }> = [];
 
     // Core page element and structured hierarchy extractor script
     const pageInspectScript = `
@@ -267,12 +269,25 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
 
         // Social links
         let instaFound = false, linkedinFound = false, fbFound = false, twitterFound = false;
+        const socialLinks = [];
         Array.from(document.querySelectorAll('a[href]')).forEach(a => {
-          const href = (a.getAttribute('href') || '').toLowerCase();
-          if (href.includes('instagram.com')) instaFound = true;
-          if (href.includes('linkedin.com')) linkedinFound = true;
-          if (href.includes('facebook.com')) fbFound = true;
-          if (href.includes('twitter.com') || href.includes('x.com')) twitterFound = true;
+          const href = (a.getAttribute('href') || '').trim();
+          const hrefLower = href.toLowerCase();
+          if (hrefLower.includes('instagram.com')) {
+            instaFound = true;
+            socialLinks.push({ platform: 'instagram', href });
+          } else if (hrefLower.includes('linkedin.com')) {
+            linkedinFound = true;
+            socialLinks.push({ platform: 'linkedin', href });
+          } else if (hrefLower.includes('facebook.com')) {
+            fbFound = true;
+            socialLinks.push({ platform: 'facebook', href });
+          } else if (hrefLower.includes('twitter.com') || hrefLower.includes('x.com')) {
+            twitterFound = true;
+            socialLinks.push({ platform: 'twitter', href });
+          } else if (hrefLower.includes('wa.me') || hrefLower.includes('whatsapp.com') || hrefLower.startsWith('whatsapp:')) {
+            socialLinks.push({ platform: 'whatsapp', href });
+          }
         });
 
         // Form elements
@@ -371,6 +386,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           linkedinFound,
           fbFound,
           twitterFound,
+          socialLinks,
           bodyText,
           addressElText,
           sections
@@ -443,6 +459,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           linkedinFound: false,
           fbFound: false,
           twitterFound: false,
+          socialLinks: [],
           bodyText: '',
           addressElText: '',
           sections: []
@@ -495,6 +512,14 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
         if (pageDOM.linkedinFound) globalLinkedIn = 'Working';
         if (pageDOM.fbFound) globalFB = 'Working';
         if (pageDOM.twitterFound) globalTwitter = 'Working';
+
+        if (pageDOM.socialLinks && pageDOM.socialLinks.length > 0) {
+          pageDOM.socialLinks.forEach((sl: any) => {
+            if (!globalSocialLinks.some(s => s.platform === sl.platform && s.href === sl.href)) {
+              globalSocialLinks.push(sl);
+            }
+          });
+        }
 
         pageDOM.linksData.forEach((l: any) => {
           if (l.isMissing) totalMissingLinks++;
@@ -574,7 +599,8 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
         instagram: globalInsta,
         linkedin: globalLinkedIn,
         facebook: globalFB,
-        twitter: globalTwitter
+        twitter: globalTwitter,
+        socialLinks: globalSocialLinks
       }
     };
   } catch (error: any) {
@@ -681,7 +707,8 @@ async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsi
         instagram: 'Missing',
         linkedin: 'Missing',
         facebook: 'Missing',
-        twitter: 'Missing'
+        twitter: 'Missing',
+        socialLinks: []
       }
     };
   } catch (err: any) {

@@ -67,11 +67,8 @@ export interface LinkValidationSummary {
 export interface ContactValidationSummary {
   phone: { status: 'Present' | 'Missing' | 'Incorrect'; value?: string; expected?: string };
   email: { status: 'Present' | 'Missing' | 'Incorrect'; value?: string; expected?: string };
-  address: { status: 'Present' | 'Missing'; value?: string };
-  instagram: 'Working' | 'Missing';
-  linkedin: 'Working' | 'Missing';
-  facebook: 'Working' | 'Missing';
-  twitter: 'Working' | 'Missing';
+  address: { status: 'Present' | 'Missing' | 'Incorrect'; value?: string; expected?: string };
+  socials: Array<{ platform: string; expected: string; found: string; status: 'Working' | 'Missing' }>;
 }
 
 export type SeoStatusType = 'Passed' | 'Missing' | 'Unable to Validate' | 'Loading Error';
@@ -181,6 +178,70 @@ function findMatchingSection(docSectionName: string, siteSections: any[]): any |
   });
 
   return found;
+}
+
+interface ExpectedContactInfo {
+  phone?: string;
+  email?: string;
+  address?: string;
+  socials: string[];
+}
+
+function parseExpectedContactInfo(rawText: string): ExpectedContactInfo {
+  const socials: string[] = [];
+  let phone: string | undefined;
+  let email: string | undefined;
+  let address: string | undefined;
+
+  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  lines.forEach(line => {
+    const lower = line.toLowerCase();
+    
+    if (lower.startsWith('phone number:') || lower.startsWith('phone:')) {
+      phone = line.split(':')[1]?.trim();
+      return;
+    }
+    if (lower.startsWith('email:') || lower.startsWith('email address:')) {
+      email = line.split(':')[1]?.trim();
+      return;
+    }
+    if (lower.startsWith('main address:') || lower.startsWith('address:')) {
+      address = line.split(':')[1]?.trim();
+      return;
+    }
+    if (lower.startsWith('social media:') || lower.startsWith('socials:') || lower.startsWith('social:')) {
+      const socialVal = line.split(':')[1]?.trim() || '';
+      socialVal.split(/[,&]/).forEach(s => {
+        const plat = s.trim().toLowerCase();
+        if (plat) socials.push(plat);
+      });
+      return;
+    }
+
+    if (!phone && lower.includes('phone') && line.includes(':')) {
+      phone = line.split(':')[1]?.trim();
+    }
+    if (!email && lower.includes('email') && line.includes(':')) {
+      email = line.split(':')[1]?.trim();
+    }
+    if (!email && line.includes('@') && line.includes('.')) {
+      const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
+      const match = line.match(emailRegex);
+      if (match) email = match[1].trim();
+    }
+    if (!address && (lower.includes('address') || lower.includes('unit ')) && line.includes(':')) {
+      address = line.split(':')[1]?.trim();
+    }
+    if (lower.includes('social media') && line.includes(':')) {
+      const socialVal = line.split(':')[1]?.trim() || '';
+      socialVal.split(/[,&]/).forEach(s => {
+        const plat = s.trim().toLowerCase();
+        if (plat) socials.push(plat);
+      });
+    }
+  });
+
+  return { phone, email, address, socials };
 }
 
 /**
@@ -477,28 +538,99 @@ export function runDeliveryQaEngine(
     ]
   };
 
-  // Contact Information Validation
+  // Dynamic Contact Information Validation
+  const expectedContact = parseExpectedContactInfo(docData.rawText);
+
+  let phoneStatus: 'Present' | 'Missing' | 'Incorrect' = 'Missing';
+  if (siteData.globalContactInfo.phone.present) {
+    if (expectedContact.phone) {
+      const exp = expectedContact.phone.replace(/\D/g, '');
+      const fnd = (siteData.globalContactInfo.phone.value || '').replace(/\D/g, '');
+      phoneStatus = (fnd.includes(exp) || exp.includes(fnd)) ? 'Present' : 'Incorrect';
+    } else {
+      phoneStatus = 'Present';
+    }
+  } else {
+    phoneStatus = expectedContact.phone ? 'Missing' : 'Missing';
+  }
+
+  let emailStatus: 'Present' | 'Missing' | 'Incorrect' = 'Missing';
+  if (siteData.globalContactInfo.email.present) {
+    if (expectedContact.email) {
+      const exp = expectedContact.email.toLowerCase().trim();
+      const fnd = (siteData.globalContactInfo.email.value || '').toLowerCase().trim();
+      emailStatus = (fnd === exp || fnd.includes(exp) || exp.includes(fnd)) ? 'Present' : 'Incorrect';
+    } else {
+      emailStatus = 'Present';
+    }
+  } else {
+    emailStatus = expectedContact.email ? 'Missing' : 'Missing';
+  }
+
+  let addressStatus: 'Present' | 'Missing' | 'Incorrect' = 'Missing';
+  if (siteData.globalContactInfo.address.present) {
+    if (expectedContact.address) {
+      const exp = expectedContact.address.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const fnd = (siteData.globalContactInfo.address.value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      addressStatus = (fnd.includes(exp) || exp.includes(fnd)) ? 'Present' : 'Present';
+    } else {
+      addressStatus = 'Present';
+    }
+  } else {
+    addressStatus = expectedContact.address ? 'Missing' : 'Missing';
+  }
+
+  const socialsList: Array<{ platform: string; expected: string; found: string; status: 'Working' | 'Missing' }> = [];
+  const socialsToInspect = expectedContact.socials.length > 0 
+    ? expectedContact.socials 
+    : ['whatsapp', 'instagram', 'linkedin', 'facebook'];
+
+  socialsToInspect.forEach(plat => {
+    const matchingLink = (siteData.globalContactInfo.socialLinks || []).find(l => l.platform === plat);
+    let siteFound = !!matchingLink;
+    let siteHref = matchingLink ? matchingLink.href : '';
+
+    if (!siteFound) {
+      if (plat === 'instagram' && siteData.globalContactInfo.instagram === 'Working') siteFound = true;
+      if (plat === 'linkedin' && siteData.globalContactInfo.linkedin === 'Working') siteFound = true;
+      if (plat === 'facebook' && siteData.globalContactInfo.facebook === 'Working') siteFound = true;
+      if (plat === 'twitter' && siteData.globalContactInfo.twitter === 'Working') siteFound = true;
+    }
+
+    socialsList.push({
+      platform: plat.charAt(0).toUpperCase() + plat.slice(1),
+      expected: expectedContact.socials.length > 0 ? 'Present in Spec' : 'Optional Check',
+      found: siteFound ? (siteHref || 'Present') : 'None',
+      status: siteFound ? 'Working' : 'Missing'
+    });
+  });
+
   const contactInfoReport: ContactValidationSummary = {
     phone: {
-      status: siteData.globalContactInfo.phone.present ? 'Present' : 'Missing',
-      value: siteData.globalContactInfo.phone.value
+      status: phoneStatus,
+      value: siteData.globalContactInfo.phone.value,
+      expected: expectedContact.phone
     },
     email: {
-      status: siteData.globalContactInfo.email.present ? 'Present' : 'Missing',
-      value: siteData.globalContactInfo.email.value
+      status: emailStatus,
+      value: siteData.globalContactInfo.email.value,
+      expected: expectedContact.email
     },
     address: {
-      status: siteData.globalContactInfo.address.present ? 'Present' : 'Missing',
-      value: siteData.globalContactInfo.address.value
+      status: addressStatus,
+      value: siteData.globalContactInfo.address.value,
+      expected: expectedContact.address
     },
-    instagram: siteData.globalContactInfo.instagram,
-    linkedin: siteData.globalContactInfo.linkedin,
-    facebook: siteData.globalContactInfo.facebook,
-    twitter: siteData.globalContactInfo.twitter
+    socials: socialsList
   };
 
-  if (contactInfoReport.phone.status === 'Missing') contactIssuesCount++;
-  if (contactInfoReport.email.status === 'Missing') contactIssuesCount++;
+  if (contactInfoReport.phone.status === 'Missing' || contactInfoReport.phone.status === 'Incorrect') contactIssuesCount++;
+  if (contactInfoReport.email.status === 'Missing' || contactInfoReport.email.status === 'Incorrect') contactIssuesCount++;
+  contactInfoReport.socials.forEach(s => {
+    if (s.status === 'Missing' && expectedContact.socials.length > 0) {
+      contactIssuesCount++;
+    }
+  });
 
   // SEO Quick Check
   let anyUnableToValidate = false;

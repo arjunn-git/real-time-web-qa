@@ -514,37 +514,33 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
           <div className="contact-item-box">
             <span className="ci-label">Phone Number</span>
             <span className={`ci-value ${report.contactInfoReport.phone.status === 'Present' ? 'present' : 'missing'}`}>
-              {report.contactInfoReport.phone.status === 'Present' ? `✓ Present (${report.contactInfoReport.phone.value})` : '✗ Missing'}
+              {report.contactInfoReport.phone.status === 'Present' ? `✓ Present (${report.contactInfoReport.phone.value})` : report.contactInfoReport.phone.status === 'Incorrect' ? `✗ Incorrect (Expected: ${report.contactInfoReport.phone.expected}, Found: ${report.contactInfoReport.phone.value})` : '✗ Missing'}
             </span>
           </div>
 
           <div className="contact-item-box">
             <span className="ci-label">Email Address</span>
             <span className={`ci-value ${report.contactInfoReport.email.status === 'Present' ? 'present' : 'missing'}`}>
-              {report.contactInfoReport.email.status === 'Present' ? `✓ Present (${report.contactInfoReport.email.value})` : '✗ Missing'}
+              {report.contactInfoReport.email.status === 'Present' ? `✓ Present (${report.contactInfoReport.email.value})` : report.contactInfoReport.email.status === 'Incorrect' ? `✗ Incorrect (Expected: ${report.contactInfoReport.email.expected}, Found: ${report.contactInfoReport.email.value})` : '✗ Missing'}
             </span>
           </div>
 
           <div className="contact-item-box">
             <span className="ci-label">Office Address</span>
             <span className={`ci-value ${report.contactInfoReport.address.status === 'Present' ? 'present' : 'missing'}`}>
-              {report.contactInfoReport.address.status === 'Present' ? `✓ Present` : '✗ Missing'}
+              {report.contactInfoReport.address.status === 'Present' ? `✓ Present (${report.contactInfoReport.address.value || ''})` : '✗ Missing'}
             </span>
           </div>
 
-          <div className="contact-item-box">
-            <span className="ci-label">Instagram Link</span>
-            <span className={`ci-value ${report.contactInfoReport.instagram === 'Working' ? 'present' : 'missing'}`}>
-              {report.contactInfoReport.instagram === 'Working' ? '✓ Working' : '✗ Missing'}
-            </span>
-          </div>
-
-          <div className="contact-item-box">
-            <span className="ci-label">LinkedIn Link</span>
-            <span className={`ci-value ${report.contactInfoReport.linkedin === 'Working' ? 'present' : 'missing'}`}>
-              {report.contactInfoReport.linkedin === 'Working' ? '✓ Working' : '✗ Missing'}
-            </span>
-          </div>
+          {/* Render socials dynamically from parsed document parameters */}
+          {report.contactInfoReport.socials && report.contactInfoReport.socials.map((social, sidx) => (
+            <div key={sidx} className="contact-item-box">
+              <span className="ci-label">{social.platform} Link</span>
+              <span className={`ci-value ${social.status === 'Working' ? 'present' : 'missing'}`}>
+                {social.status === 'Working' ? `✓ Working (${social.found})` : '✗ Missing'}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
