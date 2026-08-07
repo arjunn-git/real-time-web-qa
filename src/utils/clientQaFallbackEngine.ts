@@ -146,43 +146,74 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string, str
   }
 
   // 3. Dynamic Button Extraction from Uploaded Brief
-  const ctaMatches = sanitizedDocText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order|Estimate|Enquire)\s+[A-Za-z0-9\s]{2,25}/gi);
   const dynamicButtonItems: ButtonValidationItem[] = [];
 
-  if (ctaMatches && ctaMatches.length > 0) {
-    const uniqueCtas = Array.from(new Set(ctaMatches.map(c => {
-      let clean = c.trim().replace(/^(hero image button:|button:)/i, '').trim();
-      if (clean.includes('>')) {
-        clean = clean.split('>')[0].replace(/[\[\]]/g, '').trim();
-      } else if (clean.startsWith('[') && clean.endsWith(']')) {
-        clean = clean.slice(1, -1).trim();
-      }
-      return clean;
-    }))).slice(0, 8);
-    uniqueCtas.forEach(cta => {
-      dynamicButtonItems.push({
-        name: cta,
-        page: 'Home',
-        href: '#action',
-        actionType: 'Opens Lead Form / Contact',
-        isValid: true,
-        statusLabel: 'Valid Action Assigned'
-      });
-      contentDiscrepancies.push({
-        type: '✅ Correct',
-        page: 'Home',
-        section: 'CTA',
-        component: 'Buttons',
-        item: `CTA Button: ${cta}`,
-        expected: `${cta} (Button Link)`,
-        found: cta
+  if (structuredContent && structuredContent.pages && structuredContent.pages.length > 0) {
+    structuredContent.pages.forEach((p: any) => {
+      const pageName = p.name || 'Home';
+      p.sections.forEach((s: any) => {
+        if (s.buttons) {
+          s.buttons.forEach((btn: string) => {
+            let btnText = btn;
+            let cleanSpec = btn.replace(/^(hero image button:|button:)/i, '').trim();
+            if (cleanSpec.includes('>')) {
+              const parts = cleanSpec.split('>');
+              btnText = parts[0].replace(/[\[\]]/g, '').trim();
+            } else if (cleanSpec.startsWith('[') && cleanSpec.endsWith(']')) {
+              btnText = cleanSpec.slice(1, -1).trim();
+            }
+
+            dynamicButtonItems.push({
+              name: btnText,
+              page: pageName,
+              href: '#action',
+              actionType: 'Opens Lead Form / Contact',
+              isValid: true,
+              statusLabel: 'Valid Action Assigned'
+            });
+          });
+        }
       });
     });
-  } else {
-    dynamicButtonItems.push(
-      { name: 'Contact Us', page: 'Home', href: '#contact', actionType: 'Internal Page Link', isValid: true, statusLabel: 'Internal Link (Valid)' },
-      { name: 'Get Free Estimate', page: 'Home', href: '#quote', actionType: 'Opens Lead Form', isValid: true, statusLabel: 'Opens Lead Form (Valid)' }
-    );
+  }
+
+  if (dynamicButtonItems.length === 0) {
+    const ctaMatches = sanitizedDocText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order|Estimate|Enquire)\s+[A-Za-z0-9\s]{2,25}/gi);
+    if (ctaMatches && ctaMatches.length > 0) {
+      const uniqueCtas = Array.from(new Set(ctaMatches.map(c => {
+        let clean = c.trim().replace(/^(hero image button:|button:)/i, '').trim();
+        if (clean.includes('>')) {
+          clean = clean.split('>')[0].replace(/[\[\]]/g, '').trim();
+        } else if (clean.startsWith('[') && clean.endsWith(']')) {
+          clean = clean.slice(1, -1).trim();
+        }
+        return clean;
+      }))).slice(0, 8);
+      uniqueCtas.forEach(cta => {
+        dynamicButtonItems.push({
+          name: cta,
+          page: 'Home',
+          href: '#action',
+          actionType: 'Opens Lead Form / Contact',
+          isValid: true,
+          statusLabel: 'Valid Action Assigned'
+        });
+        contentDiscrepancies.push({
+          type: '✅ Correct',
+          page: 'Home',
+          section: 'CTA',
+          component: 'Buttons',
+          item: `CTA Button: ${cta}`,
+          expected: `${cta} (Button Link)`,
+          found: cta
+        });
+      });
+    } else {
+      dynamicButtonItems.push(
+        { name: 'Contact Us', page: 'Home', href: '#contact', actionType: 'Internal Page Link', isValid: true, statusLabel: 'Internal Link (Valid)' },
+        { name: 'Get Free Estimate', page: 'Home', href: '#quote', actionType: 'Opens Lead Form', isValid: true, statusLabel: 'Opens Lead Form (Valid)' }
+      );
+    }
   }
 
   const buttonsReport: ButtonValidationSummary = {
