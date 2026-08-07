@@ -353,20 +353,36 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
 
               {/* Rows */}
               {docButtons.map((docBtn, idx) => {
-                const btnName = docBtn.item.replace('CTA Button: ', '');
+                let btnName = docBtn.item;
+                if (btnName.startsWith('CTA Button:')) {
+                  btnName = btnName.replace('CTA Button:', '').trim();
+                } else if (btnName.startsWith('CTA Button ("') && btnName.endsWith('")')) {
+                  btnName = btnName.slice(12, -2).trim();
+                }
+                
+                btnName = btnName.replace(/^(hero image button:|button:)/i, '').trim();
+                if (btnName.includes('>')) {
+                  btnName = btnName.split('>')[0].replace(/[\[\]]/g, '').trim();
+                } else if (btnName.startsWith('[') && btnName.endsWith(']')) {
+                  btnName = btnName.slice(1, -1).trim();
+                }
+
                 const cleanDocBtn = btnName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
                 const webBtn = report.buttonsReport.items.find(b => 
                   b.page.toLowerCase() === docBtn.page.toLowerCase() &&
                   b.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanDocBtn)
                 );
                 
-                // Extract target from "Get In Touch (Link to)"
-                const intentStr = docBtn.expected.includes('(') 
+                let intentStr = docBtn.expected.includes('(') 
                   ? docBtn.expected.split('(')[1].replace(')', '') 
                   : 'Button Link';
+
+                if (intentStr.includes('>')) {
+                  intentStr = intentStr.split('>')[1]?.trim() || intentStr;
+                }
                   
                 const actualHref = webBtn ? webBtn.href : 'Not Found';
-                const isCorrect = docBtn.type === '✅ Correct';
+                const isCorrect = docBtn.type === '✅ Correct' && actualHref !== 'Not Found';
 
                 return (
                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr 1.8fr 2.2fr 1fr', gap: '12px', alignItems: 'center', background: 'rgba(0,0,0,0.15)', padding: '10px 14px', borderRadius: '8px', fontSize: '0.78rem' }}>
