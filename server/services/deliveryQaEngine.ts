@@ -439,9 +439,40 @@ export function runDeliveryQaEngine(
           }
 
           const cleanDocBtn = cleanAndNormalize(btnText);
-          const match = sitePage.buttons.some(b => cleanAndNormalize(b.text).includes(cleanDocBtn)) ||
-                        cleanAndNormalize(sitePage.visibleText).includes(cleanDocBtn) ||
-                        siteSections.some((sec: any) => sec.buttons && sec.buttons.some((b: string) => cleanAndNormalize(b).includes(cleanDocBtn)));
+          const webBtn = sitePage.buttons.find(b => cleanAndNormalize(b.text).includes(cleanDocBtn));
+          
+          let match = false;
+          let foundTarget = 'None';
+          let recommendation = `Create the button "${btnText}" linking to: ${docIntent}.`;
+
+          if (webBtn) {
+            foundTarget = webBtn.href || '#action';
+            const cleanHref = foundTarget.toLowerCase().trim();
+            const cleanIntent = docIntent.toLowerCase().trim();
+
+            if (cleanIntent === 'button' || cleanIntent === 'contact' || cleanIntent === 'form' || cleanIntent === 'lead form' || cleanIntent === 'email/form' || cleanIntent === 'relevant service page') {
+              if (cleanHref.startsWith('#') || webBtn.actionType.includes('Form') || cleanHref.includes('contact') || cleanHref.includes('enquire') || cleanHref.includes('service') || cleanHref.length > 1) {
+                match = true;
+              } else {
+                recommendation = `Update button "${btnText}" link: currently links to "${foundTarget}", but should open a Contact Form, lead form, or link to "/contact".`;
+              }
+            } else if (cleanIntent.startsWith('link to')) {
+              const expectedTarget = cleanIntent.replace('link to', '').trim();
+              if (cleanHref.includes(expectedTarget) || expectedTarget.includes(cleanHref) || (expectedTarget === '000 000 000' && cleanHref.startsWith('tel:'))) {
+                match = true;
+              } else {
+                recommendation = `Update button "${btnText}" link: currently links to "${foundTarget}", but should link to "${expectedTarget}".`;
+              }
+            } else {
+              match = webBtn.isValid;
+            }
+          } else {
+            const textPresent = cleanAndNormalize(sitePage.visibleText).includes(cleanDocBtn);
+            if (textPresent) {
+              foundTarget = 'Text only (no click action)';
+              recommendation = `The text "${btnText}" exists, but it is not a working button. Convert it into a button link.`;
+            }
+          }
 
           contentDiscrepancyAdd(
             contentDiscrepancies,
@@ -451,7 +482,8 @@ export function runDeliveryQaEngine(
             'Buttons',
             `CTA Button: ${btnText}`,
             `${btnText} (${docIntent})`,
-            match ? btnText : 'None'
+            match ? btnText : foundTarget,
+            recommendation
           );
           if (!match) missingContentCount++;
         });

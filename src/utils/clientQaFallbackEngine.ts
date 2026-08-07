@@ -150,7 +150,15 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string, str
   const dynamicButtonItems: ButtonValidationItem[] = [];
 
   if (ctaMatches && ctaMatches.length > 0) {
-    const uniqueCtas = Array.from(new Set(ctaMatches.map(c => c.trim()))).slice(0, 6);
+    const uniqueCtas = Array.from(new Set(ctaMatches.map(c => {
+      let clean = c.trim().replace(/^(hero image button:|button:)/i, '').trim();
+      if (clean.includes('>')) {
+        clean = clean.split('>')[0].replace(/[\[\]]/g, '').trim();
+      } else if (clean.startsWith('[') && clean.endsWith(']')) {
+        clean = clean.slice(1, -1).trim();
+      }
+      return clean;
+    }))).slice(0, 8);
     uniqueCtas.forEach(cta => {
       dynamicButtonItems.push({
         name: cta,
@@ -165,8 +173,8 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string, str
         page: 'Home',
         section: 'CTA',
         component: 'Buttons',
-        item: `CTA Button ("${cta}")`,
-        expected: cta,
+        item: `CTA Button: ${cta}`,
+        expected: `${cta} (Button Link)`,
         found: cta
       });
     });
