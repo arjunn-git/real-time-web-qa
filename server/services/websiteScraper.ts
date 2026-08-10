@@ -614,104 +614,226 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
 
 async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsiteScrapeResult> {
   const cleanUrl = getCleanUrl(targetUrl);
+  const parsedBase = new URL(cleanUrl);
+  const origin = parsedBase.origin;
+
+  const pagesData: PageScrapeData[] = [];
+  const processedUrls = new Set<string>();
+  const urlsToInspect: string[] = [cleanUrl];
+
+  let mainTitle = '';
+  let globalPhone = { present: false, value: '' };
+  let globalEmail = { present: false, value: '' };
+  let globalAddress = { present: false, value: '' };
+  let globalInsta: 'Working' | 'Missing' = 'Missing';
+  let globalLinkedIn: 'Working' | 'Missing' = 'Missing';
+  let globalFB: 'Working' | 'Missing' = 'Missing';
+  let globalTwitter: 'Working' | 'Missing' = 'Missing';
+  const globalSocialLinks: Array<{ platform: string; href: string }> = [];
+
+  let totalWorkingLinks = 0;
+  let totalBrokenLinks = 0;
+  let totalMissingLinks = 0;
+  const allButtonsAcc: Array<{ page: string; text: string; href: string; actionType: string; isValid: boolean; statusLabel: string }> = [];
 
   try {
-    const res = await axios.get(cleanUrl, {
+    // 1. Fetch homepage first to discover other pages
+    const homeRes = await axios.get(cleanUrl, {
       timeout: 10000,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
     });
+    
+    const $home = cheerio.load(homeRes.data);
+    mainTitle = $home('title').text().trim() || cleanUrl;
 
-    const $ = cheerio.load(res.data);
-    const siteTitle = $('title').text().trim() || cleanUrl;
-    const h1s = $('h1').map((_, el) => $(el).text().trim()).get().filter(Boolean);
-    const metaTitle = siteTitle;
-    const metaDescription = $('meta[name="description" i], meta[property="og:description" i]').attr('content') || '';
-
-    const buttonsData: ScrapedButtonData[] = [];
-    $('a, button, input[type="submit"], input[type="button"]').each((_, el) => {
-      const val = $(el).val();
-      const valStr = Array.isArray(val) ? val.join(' ') : (val || '');
-      const text = ($(el).text().trim() || valStr || $(el).attr('aria-label') || '').trim();
-      const href = $(el).attr('href') || '#';
-      if (text && text.length < 60 && !text.includes('?')) {
-        let actionType = 'Internal Page Link';
-        if (href.startsWith('mailto:')) actionType = 'Email Link';
-        else if (href.startsWith('tel:')) actionType = 'Phone Link';
-        else if (href.startsWith('#')) actionType = 'Opens Lead Form';
-        else if (href.startsWith('http')) actionType = 'External URL';
-        buttonsData.push({ text, href, actionType, isValid: true, statusLabel: `${actionType} (Valid)` });
+    // Discover internal links
+    $home('a[href]').each((_, el) => {
+      const href = $home(el).attr('href');
+      if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+        try {
+          const absolute = new URL(href, cleanUrl).href;
+          if (absolute.startsWith(origin)) {
+            const normalized = absolute.split('#')[0].replace(/\/$/, '');
+            if (!processedUrls.has(normalized) && urlsToInspect.length < 15) {
+              urlsToInspect.push(absolute);
+              processedUrls.add(normalized);
+            }
+          }
+        } catch (e) {}
       }
     });
-
-    const fullHtml = String(res.data);
-    const phoneMatch = fullHtml.match(/(\+?\d[0-9\s\-]{8,}\d)/);
-    const emailMatch = fullHtml.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-
-    // Build plain sections fallback
-    const sections: any[] = [];
-    h1s.forEach(h => {
-      sections.push({ name: 'General', heading: h, paragraphs: [], lists: [], buttons: [], tables: [], forms: [] });
-    });
-    $('p').each((_, el) => {
-      const txt = $(el).text().trim();
-      if (txt.length > 20) {
-        if (sections.length === 0) {
-          sections.push({ name: 'Hero', heading: '', paragraphs: [txt], lists: [], buttons: [], tables: [], forms: [] });
-        } else {
-          sections[sections.length - 1].paragraphs.push(txt);
-        }
-      }
-    });
-
-    const pagesData: PageScrapeData[] = [{
-      name: 'Home',
-      url: cleanUrl,
-      path: '/',
-      status: 200,
-      isAccessible: true,
-      seoExtractionSuccess: true,
-      h1: h1s,
-      metaTitle,
-      metaDescription,
-      imagesTotal: $('img').length,
-      imagesMissingAlt: $('img:not([alt])').length,
-      buttons: buttonsData,
-      links: [],
-      forms: [],
-      contactInfo: {
-        phones: phoneMatch ? [phoneMatch[1]] : [],
-        emails: emailMatch ? [emailMatch[1]] : [],
-        addresses: [],
-        socials: { instagram: 'Missing', linkedin: 'Missing', facebook: 'Missing', twitter: 'Missing' }
-      },
-      visibleText: $('body').text().replace(/\s+/g, ' ').trim(),
-      structuredContent: {
-        name: 'Home',
-        sections
-      }
-    }];
-
-    return {
-      baseUrl: cleanUrl,
-      siteTitle,
-      pages: pagesData,
-      discoveredPageNames: ['Home'],
-      allButtons: buttonsData.map(b => ({ page: 'Home', ...b })),
-      linkCounters: { working: buttonsData.length, broken: 0, missing: 0 },
-      globalContactInfo: {
-        phone: { present: !!phoneMatch, value: phoneMatch ? phoneMatch[1] : undefined },
-        email: { present: !!emailMatch, value: emailMatch ? emailMatch[1] : undefined },
-        address: { present: false },
-        instagram: 'Missing',
-        linkedin: 'Missing',
-        facebook: 'Missing',
-        twitter: 'Missing',
-        socialLinks: []
-      }
-    };
   } catch (err: any) {
-    throw new Error(`Website request failed: ${err.message || 'Could not fetch website'}`);
+    console.error('Failed to parse base page for internal link discovery:', err.message);
   }
+
+  // Deduplicate and process each url
+  const uniqueUrls = Array.from(new Set(urlsToInspect));
+
+  for (const urlItem of uniqueUrls) {
+    const normUrl = urlItem.split('#')[0].replace(/\/$/, '');
+    try {
+      const res = await axios.get(urlItem, {
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+
+      const $ = cheerio.load(res.data);
+      const title = $('title').text().trim() || urlItem;
+      const h1s = $('h1').map((_, el) => $(el).text().trim()).get().filter(Boolean);
+      const metaTitle = title;
+      const metaDescription = $('meta[name="description" i], meta[property="og:description" i]').attr('content') || '';
+
+      const currentUrlObj = new URL(urlItem);
+      const pathName = currentUrlObj.pathname;
+      let pageName = 'Home';
+      const cleanPath = pathName.replace(/^\/(website|site|wixsite)-\d+\/?/i, '/').replace(/^\//, '');
+
+      if (pathName === '/' || pathName === '' || cleanPath === '') {
+        pageName = 'Home';
+      } else {
+        pageName = cleanPath
+          .replace(/[-_/]/g, ' ')
+          .replace(/\b\w/g, (c: string) => c.toUpperCase())
+          .trim();
+      }
+
+      // Buttons Data
+      const buttonsData: ScrapedButtonData[] = [];
+      const linksData: any[] = [];
+
+      $('a, button, input[type="submit"], input[type="button"]').each((_, el) => {
+        const val = $(el).val();
+        const valStr = Array.isArray(val) ? val.join(' ') : (val || '');
+        let text = ($(el).text().trim() || valStr || $(el).attr('aria-label') || '').trim();
+        text = text.replace(/\s+/g, ' ');
+        const href = $(el).attr('href') || '#';
+
+        if (text && text.length < 60 && !text.includes('?')) {
+          let actionType = 'Internal Page Link';
+          if (href.startsWith('mailto:')) actionType = 'Email Link';
+          else if (href.startsWith('tel:')) actionType = 'Phone Link';
+          else if (href.startsWith('#')) actionType = 'Opens Lead Form';
+          else if (href.startsWith('http')) actionType = 'External URL';
+
+          const btnObj = { text, href, actionType, isValid: href !== '#', statusLabel: href !== '#' ? `${actionType} (Valid)` : 'Missing Action' };
+          buttonsData.push(btnObj);
+          allButtonsAcc.push({ page: pageName, ...btnObj });
+          if (href === '#') totalMissingLinks++;
+          else totalWorkingLinks++;
+        }
+      });
+
+      // Phones and Emails
+      const fullHtml = String(res.data);
+      const phoneMatch = fullHtml.match(/(\+?\d[0-9\s\-]{8,}\d)/);
+      const emailMatch = fullHtml.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+
+      let foundPhone = phoneMatch ? phoneMatch[1] : '';
+      let foundEmail = emailMatch ? emailMatch[1] : '';
+
+      if (foundPhone && !globalPhone.present) globalPhone = { present: true, value: foundPhone };
+      if (foundEmail && !globalEmail.present) globalEmail = { present: true, value: foundEmail };
+
+      // Address
+      const combinedText = $('address').text() || $('footer').text() || $('body').text();
+      const postcodeMatch = combinedText.match(/([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})/i);
+      if (postcodeMatch && !globalAddress.present) {
+        globalAddress = { present: true, value: `Postcode: ${postcodeMatch[1].toUpperCase()}` };
+      }
+
+      // Socials
+      $('a[href]').each((_, el) => {
+        const href = ($(el).attr('href') || '').trim();
+        const hrefLower = href.toLowerCase();
+        if (hrefLower.includes('instagram.com')) {
+          globalInsta = 'Working';
+          if (!globalSocialLinks.some(s => s.platform === 'instagram')) globalSocialLinks.push({ platform: 'instagram', href });
+        } else if (hrefLower.includes('linkedin.com')) {
+          globalLinkedIn = 'Working';
+          if (!globalSocialLinks.some(s => s.platform === 'linkedin')) globalSocialLinks.push({ platform: 'linkedin', href });
+        } else if (hrefLower.includes('facebook.com')) {
+          globalFB = 'Working';
+          if (!globalSocialLinks.some(s => s.platform === 'facebook')) globalSocialLinks.push({ platform: 'facebook', href });
+        } else if (hrefLower.includes('twitter.com') || hrefLower.includes('x.com')) {
+          globalTwitter = 'Working';
+          if (!globalSocialLinks.some(s => s.platform === 'twitter')) globalSocialLinks.push({ platform: 'twitter', href });
+        } else if (hrefLower.includes('wa.me') || hrefLower.includes('whatsapp.com')) {
+          if (!globalSocialLinks.some(s => s.platform === 'whatsapp')) globalSocialLinks.push({ platform: 'whatsapp', href });
+        }
+      });
+
+      // Build sections fallback
+      const sections: any[] = [];
+      h1s.forEach(h => {
+        sections.push({ name: 'General', heading: h, paragraphs: [], lists: [], buttons: [], tables: [], forms: [] });
+      });
+      $('p').each((_, el) => {
+        const txt = $(el).text().trim();
+        if (txt.length > 20) {
+          if (sections.length === 0) {
+            sections.push({ name: 'Hero', heading: '', paragraphs: [txt], lists: [], buttons: [], tables: [], forms: [] });
+          } else {
+            sections[sections.length - 1].paragraphs.push(txt);
+          }
+        }
+      });
+
+      pagesData.push({
+        name: pageName,
+        url: urlItem,
+        path: pathName,
+        status: 200,
+        isAccessible: true,
+        seoExtractionSuccess: true,
+        h1: h1s,
+        metaTitle,
+        metaDescription,
+        imagesTotal: $('img').length,
+        imagesMissingAlt: $('img:not([alt])').length,
+        buttons: buttonsData,
+        links: [],
+        forms: [],
+        contactInfo: {
+          phones: foundPhone ? [foundPhone] : [],
+          emails: foundEmail ? [foundEmail] : [],
+          addresses: [],
+          socials: { instagram: globalInsta, linkedin: globalLinkedIn, facebook: globalFB, twitter: globalTwitter }
+        },
+        visibleText: $('body').text().replace(/\s+/g, ' ').trim(),
+        structuredContent: {
+          name: pageName,
+          sections
+        }
+      });
+    } catch (errPage: any) {
+      console.warn(`Fallback scrape failed for page ${urlItem}:`, errPage.message);
+    }
+  }
+
+  return {
+    baseUrl: cleanUrl,
+    siteTitle: mainTitle || cleanUrl,
+    pages: pagesData,
+    discoveredPageNames: pagesData.map(p => p.name),
+    allButtons: allButtonsAcc,
+    linkCounters: {
+      working: totalWorkingLinks,
+      broken: 0,
+      missing: totalMissingLinks
+    },
+    globalContactInfo: {
+      phone: globalPhone,
+      email: globalEmail,
+      address: globalAddress,
+      instagram: globalInsta,
+      linkedin: globalLinkedIn,
+      facebook: globalFB,
+      twitter: globalTwitter,
+      socialLinks: globalSocialLinks
+    }
+  };
 }
