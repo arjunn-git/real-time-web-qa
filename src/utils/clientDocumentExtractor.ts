@@ -63,7 +63,24 @@ export async function extractPdfTextViaPdfJs(file: File): Promise<string> {
       return a.transform[4] - b.transform[4]; // Same line, sort left-to-right
     });
 
-    const pageText = items.map(item => item.str).join('\n');
+    let pageText = '';
+    let lastY: number | null = null;
+    
+    items.forEach((item: any) => {
+      const currentY = item.transform[5];
+      const strVal = item.str || '';
+      
+      if (lastY === null) {
+        pageText += strVal;
+      } else if (Math.abs(currentY - lastY) > 5) {
+        pageText += '\n' + strVal;
+      } else {
+        const needsSpace = !pageText.endsWith(' ') && !strVal.startsWith(' ') && pageText.length > 0;
+        pageText += (needsSpace ? ' ' : '') + strVal;
+      }
+      lastY = currentY;
+    });
+
     fullText += pageText + '\n\f';
   }
   return fullText;

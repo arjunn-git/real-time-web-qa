@@ -124,7 +124,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
     }
 
     // Wait for dynamic Wix state rendering to settle
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(4000);
 
     const mainTitle = await page.title();
 
@@ -407,7 +407,7 @@ export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteS
           if (!pageRes || pageRes.status() >= 400) {
             isAccessible = false;
           }
-          await inspectPage.waitForTimeout(1000);
+          await inspectPage.waitForTimeout(3000);
         }
 
         const currentUrlObj = new URL(urlItem);

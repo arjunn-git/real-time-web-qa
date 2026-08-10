@@ -128,10 +128,13 @@ export interface DeliveryQaReport {
 function cleanAndNormalize(text: string): string {
   if (!text) return '';
   return text
-    .replace(/\s+/g, ' ')
-    .replace(/[\r\n]+/g, ' ')
-    .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
 }
 
 function findMatchingPage(docPageName: string, sitePages: PageScrapeData[]): PageScrapeData | undefined {
@@ -345,20 +348,19 @@ export function runDeliveryQaEngine(
           `Create the section "${secName}" on page "${pageName}".`
         );
         missingContentCount++;
-        return;
+      } else {
+        // Section exists check passed
+        contentDiscrepancyAdd(
+          contentDiscrepancies,
+          '✅ Correct',
+          pageName,
+          secName,
+          'Heading',
+          `Section Exists: ${secName}`,
+          `Section "${secName}" exists`,
+          `Section matched: ${siteSec.name}`
+        );
       }
-
-      // Section exists check passed
-      contentDiscrepancyAdd(
-        contentDiscrepancies,
-        '✅ Correct',
-        pageName,
-        secName,
-        'Heading',
-        `Section Exists: ${secName}`,
-        `Section "${secName}" exists`,
-        `Section matched: ${siteSec.name}`
-      );
 
       // 3. Match Heading
       if (docSec.heading) {
