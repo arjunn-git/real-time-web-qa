@@ -209,10 +209,10 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                     {/* Headers */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
                       <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        🌐 Website Content (Actual / Wrong)
+                        📄 Document Content (Expected / Correct)
                       </div>
                       <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        📄 Document Content (Expected / Correct)
+                        🌐 Website Content (Actual / Wrong)
                       </div>
                     </div>
 
@@ -230,7 +230,28 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                               alignItems: 'stretch'
                             }}
                           >
-                            {/* Left Side: Website Content */}
+                            {/* Left Side: Document Content (Correct) */}
+                            <div 
+                              style={{
+                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(245, 158, 11, 0.03)',
+                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'}`,
+                                borderLeft: `4px solid ${isCorrect ? '#10b981' : '#f59e0b'}`,
+                                borderRadius: '8px',
+                                padding: '12px 16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <div style={{ color: isCorrect ? '#34d399' : '#facc15', fontSize: '0.7rem', fontWeight: 800, marginBottom: '4px', textTransform: 'uppercase' }}>
+                                {isCorrect ? '✓ Matched' : '★ Correct spec copy'}
+                              </div>
+                              <div style={{ color: '#fff', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                                {item.expected}
+                              </div>
+                            </div>
+
+                            {/* Right Side: Website Content */}
                             <div 
                               style={{
                                 background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(239, 68, 68, 0.05)',
@@ -262,27 +283,6 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                                   )}
                                 </div>
                               )}
-                            </div>
-
-                            {/* Right Side: Document Content (Correct) */}
-                            <div 
-                              style={{
-                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(245, 158, 11, 0.03)',
-                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'}`,
-                                borderLeft: `4px solid ${isCorrect ? '#10b981' : '#f59e0b'}`,
-                                borderRadius: '8px',
-                                padding: '12px 16px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              <div style={{ color: isCorrect ? '#34d399' : '#facc15', fontSize: '0.7rem', fontWeight: 800, marginBottom: '4px', textTransform: 'uppercase' }}>
-                                {isCorrect ? '✓ Matched' : '★ Correct spec copy'}
-                              </div>
-                              <div style={{ color: '#fff', fontSize: '0.8rem', lineHeight: 1.4 }}>
-                                {item.expected}
-                              </div>
                             </div>
 
                           </div>
