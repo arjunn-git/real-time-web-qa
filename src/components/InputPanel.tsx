@@ -117,10 +117,13 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     let currentLogIdx = 0;
     const logInterval = setInterval(() => {
       if (currentLogIdx < logList.length) {
-        setConsoleLogs(prev => {
-          if (prev.includes(logList[currentLogIdx])) return prev;
-          return [...prev, logList[currentLogIdx]];
-        });
+        const logLine = logList[currentLogIdx];
+        if (logLine) {
+          setConsoleLogs(prev => {
+            if (prev.includes(logLine)) return prev;
+            return [...prev, logLine];
+          });
+        }
         currentLogIdx++;
       }
     }, 450);
