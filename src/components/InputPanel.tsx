@@ -307,20 +307,27 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                 color: '#34d399',
                 height: '90px',
                 overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
                 boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)',
                 scrollBehavior: 'smooth'
               }}
             >
               {consoleLogs.map((log, idx) => (
-                <div key={idx} style={{ textShadow: '0 0 2px rgba(52, 211, 153, 0.3)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                <div 
+                  key={idx} 
+                  style={{ 
+                    textShadow: '0 0 2px rgba(52, 211, 153, 0.3)', 
+                    whiteSpace: 'nowrap', 
+                    textOverflow: 'ellipsis', 
+                    overflow: 'hidden',
+                    marginBottom: '6px',
+                    color: '#34d399'
+                  }}
+                >
                   {log}
                 </div>
               ))}
               {consoleLogs.length === 0 && (
-                <div style={{ color: '#64748b' }}>Initializing validation pipeline...</div>
+                <div style={{ color: '#8892b0', marginBottom: '6px' }}>Initializing validation pipeline...</div>
               )}
             </div>
 
