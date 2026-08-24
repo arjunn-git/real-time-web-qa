@@ -171,8 +171,15 @@ export const App: React.FC = () => {
       </main>
 
       <footer className="app-footer">
-        <p>
-          Dynamic Website QA Validator &copy; {new Date().getFullYear()} — Powered by Document File Upload & Puppeteer Multi-Page Scraper
+        <div className="footer-links">
+          <a href="#" className="footer-link-item" onClick={(e) => { e.preventDefault(); handleReset(); }}>Reset Dashboard</a>
+          <span>&bull;</span>
+          <a href="https://github.com/arjunn-git/real-time-web-qa" target="_blank" rel="noopener noreferrer" className="footer-link-item">GitHub Repository</a>
+          <span>&bull;</span>
+          <a href="https://real-time-web-qa.vercel.app/" target="_blank" rel="noopener noreferrer" className="footer-link-item">Vercel Deployment</a>
+        </div>
+        <p className="footer-meta-text">
+          Dynamic Website QA Validator &copy; {new Date().getFullYear()} &mdash; Developed using React, Express, Cheerio, and Playwright. Designed for automated cross-checking of client specifications against live web pages.
         </p>
       </footer>
     </div>
