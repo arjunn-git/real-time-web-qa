@@ -84,6 +84,17 @@ function getCleanUrl(urlStr: string): string {
  */
 export async function scrapeFullWebsite(targetUrl: string): Promise<FullWebsiteScrapeResult> {
   const cleanUrl = getCleanUrl(targetUrl);
+
+  // Skip Playwright in low-resource production environments (like Render) to avoid OOM crashes/hangs
+  if (
+    process.env.USE_STATIC_SCRAPER === 'true' ||
+    process.env.RENDER === 'true' ||
+    (process.env.PORT && process.env.NODE_ENV === 'production')
+  ) {
+    console.log('[Scraper]: Running in low-resource production environment, skipping Playwright to run fast static Cheerio scraper...');
+    return scrapeWebsiteStaticFallback(targetUrl);
+  }
+
   const parsedBase = new URL(cleanUrl);
   const origin = parsedBase.origin;
 
