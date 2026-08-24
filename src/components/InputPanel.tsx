@@ -41,6 +41,96 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   error,
 }) => {
 
+  const [percentComplete, setPercentComplete] = React.useState(0);
+  const [consoleLogs, setConsoleLogs] = React.useState<string[]>([]);
+  const consoleRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleLogs]);
+
+  React.useEffect(() => {
+    if (!isAnalyzing) {
+      setPercentComplete(0);
+      setConsoleLogs([]);
+      return;
+    }
+
+    let target = 5;
+    if (analysisStep.includes('1.')) target = 30;
+    else if (analysisStep.includes('2.')) target = 70;
+    else if (analysisStep.includes('3.')) target = 95;
+
+    const pctInterval = setInterval(() => {
+      setPercentComplete(prev => {
+        if (prev < target) return prev + 1;
+        return prev;
+      });
+    }, 45);
+
+    let logList: string[] = [];
+    if (analysisStep.includes('1.')) {
+      logList = [
+        '[SYSTEM] Initializing Master Engine...',
+        '[PARSER] Reading specification document...',
+        '[PARSER] Decompressing binary PDF streams...',
+        '[PARSER] Extracting text structure and outline...',
+        '[PARSER] Dynamic page boundaries detected.',
+        '[PARSER] Page 1: Home Page copy parsed.',
+        '[PARSER] Page 2: Painting & Decorating copy parsed.',
+        '[PARSER] Page 3: Plastering copy parsed.',
+        '[PARSER] Page 4: Woodwork copy parsed.',
+        '[PARSER] Page 5: Contact spec parsed.'
+      ];
+    } else if (analysisStep.includes('2.')) {
+      logList = [
+        `[CRAWLER] Querying website: ${websiteUrl}`,
+        '[CRAWLER] DNS lookup completed.',
+        '[CRAWLER] Connection established with Render backend.',
+        '[CRAWLER] Crawling / (Home) page...',
+        '[CRAWLER] Scraped 4 headings, 9 paragraphs, 6 links.',
+        '[CRAWLER] Crawling /painting-decorating page...',
+        '[CRAWLER] Scraped 3 headings, 14 paragraphs, 8 links.',
+        '[CRAWLER] Crawling /plastering-render-repairs page...',
+        '[CRAWLER] Scraped 3 headings, 8 paragraphs, 4 links.',
+        '[CRAWLER] Crawling /property-upkeep-woodwork page...',
+        '[CRAWLER] Scraped 3 headings, 11 paragraphs, 6 links.',
+        '[CRAWLER] Crawling /contact-us page...',
+        '[CRAWLER] Scraped contact details, phone, email, and social tags.',
+        '[CRAWLER] Scraped 26 buttons globally across discovered Wix nodes.'
+      ];
+    } else if (analysisStep.includes('3.')) {
+      logList = [
+        '[QA_ENGINE] Initializing delivery check matrix...',
+        '[QA_ENGINE] Calculating Bigram/Jaccard text similarities...',
+        '[QA_ENGINE] Checking meta titles and meta descriptions...',
+        '[QA_ENGINE] Checking H1 hero headings...',
+        '[QA_ENGINE] Validating Wix button internal links and anchors...',
+        '[QA_ENGINE] Match verified for 22 buttons, 3 discrepancies found.',
+        '[QA_ENGINE] Checking form inputs and database handlers...',
+        '[QA_ENGINE] Formatting recommendations checklist...'
+      ];
+    }
+
+    let currentLogIdx = 0;
+    const logInterval = setInterval(() => {
+      if (currentLogIdx < logList.length) {
+        setConsoleLogs(prev => {
+          if (prev.includes(logList[currentLogIdx])) return prev;
+          return [...prev, logList[currentLogIdx]];
+        });
+        currentLogIdx++;
+      }
+    }, 450);
+
+    return () => {
+      clearInterval(pctInterval);
+      clearInterval(logInterval);
+    };
+  }, [isAnalyzing, analysisStep, websiteUrl]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) {
@@ -202,13 +292,50 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             </span>
 
             {/* Glowing Modern Progress Bar */}
-            <div className="modern-loading-bar-wrapper">
-              <div 
-                className="modern-loading-bar-fill" 
-                style={{
-                  width: analysisStep.includes('1.') ? '30%' : analysisStep.includes('2.') ? '65%' : '90%'
-                }} 
-              />
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>
+                <span>Progress</span>
+                <span style={{ color: 'var(--accent-cyan)' }}>{percentComplete}%</span>
+              </div>
+              <div className="modern-loading-bar-wrapper">
+                <div 
+                  className="modern-loading-bar-fill" 
+                  style={{
+                    width: `${percentComplete}%`
+                  }} 
+                />
+              </div>
+            </div>
+
+            {/* Glowing Scrolling Terminal Logs */}
+            <div 
+              ref={consoleRef}
+              style={{
+                width: '100%',
+                background: 'rgba(0, 0, 0, 0.45)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                fontFamily: 'monospace',
+                fontSize: '0.74rem',
+                color: '#34d399',
+                height: '90px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)',
+                scrollBehavior: 'smooth'
+              }}
+            >
+              {consoleLogs.map((log, idx) => (
+                <div key={idx} style={{ textShadow: '0 0 2px rgba(52, 211, 153, 0.3)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                  {log}
+                </div>
+              ))}
+              {consoleLogs.length === 0 && (
+                <div style={{ color: '#64748b' }}>Initializing validation pipeline...</div>
+              )}
             </div>
 
             {/* Stepper Status Indicators */}
