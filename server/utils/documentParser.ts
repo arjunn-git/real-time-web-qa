@@ -80,7 +80,7 @@ export function isMetadataOrInstructionLine(line: string): boolean {
   if (clean.match(/^-\s*\d+\s*of\s*\d+\s*-*$/) || clean.match(/^page\s*\d+\s*of\s*\d+$/)) return true;
 
   // Exclude raw placeholder images notation
-  if (clean.match(/^\(?hero image\)?$/) || clean.match(/^\[hero image\]$/) || clean.match(/^image:?$/)) return true;
+  if (clean.includes('hero image') || clean.match(/^image:?$/)) return true;
   
   // Exclude navigation/design action notations like "Text > page"
   if (clean.includes('text > page')) return true;
