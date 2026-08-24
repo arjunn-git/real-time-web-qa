@@ -632,7 +632,6 @@ async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsi
   const globalSocialLinks: Array<{ platform: string; href: string }> = [];
 
   let totalWorkingLinks = 0;
-  let totalBrokenLinks = 0;
   let totalMissingLinks = 0;
   const allButtonsAcc: Array<{ page: string; text: string; href: string; actionType: string; isValid: boolean; statusLabel: string }> = [];
 
@@ -672,7 +671,6 @@ async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsi
   const uniqueUrls = Array.from(new Set(urlsToInspect));
 
   for (const urlItem of uniqueUrls) {
-    const normUrl = urlItem.split('#')[0].replace(/\/$/, '');
     try {
       const res = await axios.get(urlItem, {
         timeout: 10000,
@@ -703,7 +701,6 @@ async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsi
 
       // Buttons Data
       const buttonsData: ScrapedButtonData[] = [];
-      const linksData: any[] = [];
 
       $('a, button, input[type="submit"], input[type="button"]').each((_, el) => {
         const val = $(el).val();

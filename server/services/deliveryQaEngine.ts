@@ -137,6 +137,33 @@ function cleanAndNormalize(text: string): string {
     .trim();
 }
 
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const s2 = str2.toLowerCase().replace(/[^a-z0-9]/g, '');
+  
+  if (!s1 || !s2) return 0;
+  if (s1 === s2) return 1.0;
+  
+  const getBigrams = (s: string) => {
+    const bigrams = new Set<string>();
+    for (let i = 0; i < s.length - 1; i++) {
+      bigrams.add(s.substring(i, i + 2));
+    }
+    return bigrams;
+  };
+
+  const b1 = getBigrams(s1);
+  const b2 = getBigrams(s2);
+  
+  let intersection = 0;
+  b1.forEach(val => {
+    if (b2.has(val)) intersection++;
+  });
+  
+  const union = b1.size + b2.size - intersection;
+  return union > 0 ? intersection / union : 0;
+}
+
 function findMatchingPage(docPageName: string, sitePages: PageScrapeData[]): PageScrapeData | undefined {
   const norm = (s: string) => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '').trim();
   const cleanDoc = norm(docPageName);
@@ -370,6 +397,40 @@ export function runDeliveryQaEngine(
                       sitePage.h1.some(h => cleanAndNormalize(h).includes(cleanDocVal)) ||
                       siteSections.some((sec: any) => cleanAndNormalize(sec.heading || '').includes(cleanDocVal));
 
+        let foundText = 'None';
+        let recommendation = undefined;
+
+        if (match) {
+          foundText = expH;
+        } else {
+          // Find best partial match for heading
+          let bestScore = 0;
+          let bestBlock = '';
+          
+          sitePage.h1.forEach(h => {
+            const score = calculateSimilarity(expH, h);
+            if (score > bestScore) {
+              bestScore = score;
+              bestBlock = h;
+            }
+          });
+
+          siteSections.forEach((sec: any) => {
+            if (sec.heading) {
+              const score = calculateSimilarity(expH, sec.heading);
+              if (score > bestScore) {
+                bestScore = score;
+                bestBlock = sec.heading;
+              }
+            }
+          });
+
+          if (bestScore >= 0.60) {
+            foundText = bestBlock;
+            recommendation = `Spelling or copy difference detected in heading. Expected: "${expH}", Found: "${bestBlock}". Please correct the website heading.`;
+          }
+        }
+
         contentDiscrepancyAdd(
           contentDiscrepancies,
           match ? '✅ Correct' : '❌ Missing',
@@ -378,7 +439,8 @@ export function runDeliveryQaEngine(
           'Heading',
           `Heading: ${expH.substring(0, 45)}`,
           expH,
-          match ? expH : 'None'
+          match ? expH : foundText,
+          recommendation
         );
         if (!match) missingContentCount++;
       }
@@ -390,6 +452,43 @@ export function runDeliveryQaEngine(
           const match = cleanAndNormalize(sitePage.visibleText).includes(cleanDocPara) ||
                         siteSections.some((sec: any) => sec.paragraphs && sec.paragraphs.some((p: string) => cleanAndNormalize(p).includes(cleanDocPara)));
 
+          let foundText = 'None';
+          let recommendation = undefined;
+
+          if (match) {
+            foundText = para.substring(0, 70) + (para.length > 70 ? '...' : '');
+          } else {
+            // Find best partial match for paragraph
+            let bestScore = 0;
+            let bestBlock = '';
+            
+            siteSections.forEach((sec: any) => {
+              if (sec.paragraphs) {
+                sec.paragraphs.forEach((p: string) => {
+                  const score = calculateSimilarity(para, p);
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestBlock = p;
+                  }
+                });
+              }
+            });
+
+            const visibleLines = sitePage.visibleText.split(/\n+/).map(l => l.trim()).filter(Boolean);
+            visibleLines.forEach((l: string) => {
+              const score = calculateSimilarity(para, l);
+              if (score > bestScore) {
+                bestScore = score;
+                bestBlock = l;
+              }
+            });
+
+            if (bestScore >= 0.60) {
+              foundText = bestBlock;
+              recommendation = `Spelling or copy difference detected. Expected: "${para}", Found: "${bestBlock}". Please correct the website copy.`;
+            }
+          }
+
           contentDiscrepancyAdd(
             contentDiscrepancies,
             match ? '✅ Correct' : '❌ Missing',
@@ -398,7 +497,8 @@ export function runDeliveryQaEngine(
             'Paragraph',
             `Paragraph ${idx + 1}`,
             para.substring(0, 70) + (para.length > 70 ? '...' : ''),
-            match ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : 'None'
+            match ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : foundText,
+            recommendation
           );
           if (!match) missingContentCount++;
         });
@@ -411,6 +511,34 @@ export function runDeliveryQaEngine(
           const match = cleanAndNormalize(sitePage.visibleText).includes(cleanDocList) ||
                         siteSections.some((sec: any) => sec.lists && sec.lists.some((l: string) => cleanAndNormalize(l).includes(cleanDocList)));
 
+          let foundText = 'None';
+          let recommendation = undefined;
+
+          if (match) {
+            foundText = listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '');
+          } else {
+            // Find best partial match for list item
+            let bestScore = 0;
+            let bestBlock = '';
+            
+            siteSections.forEach((sec: any) => {
+              if (sec.lists) {
+                sec.lists.forEach((l: string) => {
+                  const score = calculateSimilarity(listVal, l);
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestBlock = l;
+                  }
+                });
+              }
+            });
+
+            if (bestScore >= 0.60) {
+              foundText = bestBlock;
+              recommendation = `Spelling or copy difference detected in list item. Expected: "${listVal}", Found: "${bestBlock}". Please correct the list copy.`;
+            }
+          }
+
           contentDiscrepancyAdd(
             contentDiscrepancies,
             match ? '✅ Correct' : '❌ Missing',
@@ -419,7 +547,8 @@ export function runDeliveryQaEngine(
             'Lists',
             `List Item ${idx + 1}`,
             listVal.substring(0, 70) + (listVal.length > 70 ? '...' : ''),
-            match ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : 'None'
+            match ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : foundText,
+            recommendation
           );
           if (!match) missingContentCount++;
         });
@@ -615,9 +744,24 @@ export function runDeliveryQaEngine(
   }
 
   const socialsList: Array<{ platform: string; expected: string; found: string; status: 'Working' | 'Missing' }> = [];
-  const socialsToInspect = expectedContact.socials.length > 0 
-    ? expectedContact.socials 
-    : ['whatsapp', 'instagram', 'linkedin', 'facebook'];
+  
+  let socialsToInspect: string[] = [];
+  if (expectedContact.socials.length > 0) {
+    socialsToInspect = expectedContact.socials;
+  } else {
+    // Dynamically check platforms found on website
+    const foundPlatforms = (siteData.globalContactInfo.socialLinks || []).map(l => l.platform.toLowerCase());
+    // Also add any marked as Working globally
+    if (siteData.globalContactInfo.instagram === 'Working') foundPlatforms.push('instagram');
+    if (siteData.globalContactInfo.linkedin === 'Working') foundPlatforms.push('linkedin');
+    if (siteData.globalContactInfo.facebook === 'Working') foundPlatforms.push('facebook');
+    if (siteData.globalContactInfo.twitter === 'Working') foundPlatforms.push('twitter');
+    
+    socialsToInspect = Array.from(new Set(foundPlatforms));
+    if (socialsToInspect.length === 0) {
+      socialsToInspect = ['whatsapp'];
+    }
+  }
 
   socialsToInspect.forEach(plat => {
     const matchingLink = (siteData.globalContactInfo.socialLinks || []).find(l => l.platform === plat);
@@ -633,7 +777,7 @@ export function runDeliveryQaEngine(
 
     socialsList.push({
       platform: plat.charAt(0).toUpperCase() + plat.slice(1),
-      expected: expectedContact.socials.length > 0 ? 'Present in Spec' : 'Optional Check',
+      expected: expectedContact.socials.length > 0 ? 'Required by Spec' : 'Found on Website',
       found: siteFound ? (siteHref || 'Present') : 'None',
       status: siteFound ? 'Working' : 'Missing'
     });
