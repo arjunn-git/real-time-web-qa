@@ -216,6 +216,20 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
         }
 
         if (tagName === 'p' && textVal) {
+          const normLine = textVal.replace(/\s+/g, ' ').trim();
+          const titleMatch = normLine.match(/^(?:page\/meta title|page title)\s*[:|]?\s*(.+)/i);
+          if (titleMatch) {
+            currentPage.metaTitle = titleMatch[1].trim();
+          }
+          const descMatch = normLine.match(/^meta description\s*[:|]?\s*(.+)/i);
+          if (descMatch) {
+            currentPage.metaDescription = descMatch[1].trim();
+          }
+          const h1Match = normLine.match(/^(?:h1\s*\(hero image text\)|h1\s*\(hero\)|h1)\s*[:|]?\s*(.+)/i);
+          if (h1Match) {
+            currentPage.h1 = h1Match[1].trim();
+          }
+
           if (isMetadataOrInstructionLine(textVal)) return;
           if (isButtonLine(textVal)) {
             currentSection.buttons.push(textVal);
@@ -270,6 +284,20 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
     }
 
     if (!currentPage) return; // Skip global brief parameters
+
+    const normLine = line.replace(/\s+/g, ' ').trim();
+    const titleMatch = normLine.match(/^(?:page\/meta title|page title)\s*[:|]?\s*(.+)/i);
+    if (titleMatch) {
+      currentPage.metaTitle = titleMatch[1].trim();
+    }
+    const descMatch = normLine.match(/^meta description\s*[:|]?\s*(.+)/i);
+    if (descMatch) {
+      currentPage.metaDescription = descMatch[1].trim();
+    }
+    const h1Match = normLine.match(/^(?:h1\s*\(hero image text\)|h1\s*\(hero\)|h1)\s*[:|]?\s*(.+)/i);
+    if (h1Match) {
+      currentPage.h1 = h1Match[1].trim();
+    }
 
     if (isMetadataOrInstructionLine(line)) return;
 
