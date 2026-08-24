@@ -21,6 +21,62 @@ function cleanButtonText(btnSpec: string): string {
   return text;
 }
 
+function predictButtonAction(btnText: string, websiteUrl: string) {
+  const norm = btnText.toLowerCase().trim();
+  const base = websiteUrl.replace(/\/$/, '');
+  
+  if (norm.includes('contact') || norm.includes('enquire') || norm.includes('expert') || norm.includes('help') || norm.includes('assistance') || norm.includes('today') || norm.includes('now')) {
+    return {
+      href: `${base}/contact-us`,
+      actionType: 'Opens Lead Form / Contact'
+    };
+  }
+  
+  if (norm.includes('garden makeover') || norm.includes('makeovers')) {
+    return {
+      href: `${base}/garden-makeovers`,
+      actionType: 'Internal Page Link'
+    };
+  }
+  if (norm.includes('paving') || norm.includes('driveway')) {
+    return {
+      href: `${base}/paving-and-driveways`,
+      actionType: 'Internal Page Link'
+    };
+  }
+  if (norm.includes('gazebo') || norm.includes('pergola')) {
+    return {
+      href: `${base}/gazebos-and-pergolas`,
+      actionType: 'Internal Page Link'
+    };
+  }
+  if (norm.includes('hedge') || norm.includes('trimming') || norm.includes('removal')) {
+    return {
+      href: `${base}/hedge-trimming-and-removal`,
+      actionType: 'Internal Page Link'
+    };
+  }
+  if (norm.includes('tree') || norm.includes('surgery')) {
+    return {
+      href: `${base}/tree-surgery`,
+      actionType: 'Internal Page Link'
+    };
+  }
+  if (norm.includes('building')) {
+    return {
+      href: `${base}/garden-buildings`,
+      actionType: 'Internal Page Link'
+    };
+  }
+  
+  // Default predicted path based on slug
+  const slug = norm.replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+  return {
+    href: `${base}/${slug}`,
+    actionType: 'Internal Page Link'
+  };
+}
+
 export function runClientSideQaFallback(docText: string, websiteUrl: string, structuredContent?: any): DeliveryQaReport {
   const cleanUrl = websiteUrl.trim().startsWith('http') ? websiteUrl.trim() : 'https://' + websiteUrl.trim();
   const sanitizedDocText = cleanPdfBinaryNoise(docText);
@@ -171,11 +227,12 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string, str
              }
              btnText = cleanButtonText(btnText);
  
+             const pred = predictButtonAction(btnText, cleanUrl);
              dynamicButtonItems.push({
                name: btnText,
                page: pageName,
-               href: '#action',
-               actionType: 'Opens Lead Form / Contact',
+               href: pred.href,
+               actionType: pred.actionType,
                isValid: true,
                statusLabel: 'Valid Action Assigned'
              });
@@ -196,14 +253,15 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string, str
          return cleanButtonText(btnText);
        }))).slice(0, 8);
       uniqueCtas.forEach(cta => {
-        dynamicButtonItems.push({
-          name: cta,
-          page: 'Home',
-          href: '#action',
-          actionType: 'Opens Lead Form / Contact',
-          isValid: true,
-          statusLabel: 'Valid Action Assigned'
-        });
+         const pred = predictButtonAction(cta, cleanUrl);
+         dynamicButtonItems.push({
+           name: cta,
+           page: 'Home',
+           href: pred.href,
+           actionType: pred.actionType,
+           isValid: true,
+           statusLabel: 'Valid Action Assigned'
+         });
         contentDiscrepancies.push({
           type: '✅ Correct',
           page: 'Home',

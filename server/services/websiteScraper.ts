@@ -720,7 +720,7 @@ async function scrapeWebsiteStaticFallback(targetUrl: string): Promise<FullWebsi
         text = text.replace(/\s+/g, ' ');
         const href = $(el).attr('href') || '#';
 
-        if (text && text.length < 60 && !text.includes('?')) {
+        if (text && text.length < 60) {
           let actionType = 'Internal Page Link';
           if (href.startsWith('mailto:')) actionType = 'Email Link';
           else if (href.startsWith('tel:')) actionType = 'Phone Link';
