@@ -233,52 +233,74 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                             {/* Left Side: Document Content (Correct) */}
                             <div 
                               style={{
-                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(245, 158, 11, 0.03)',
-                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'}`,
-                                borderLeft: `4px solid ${isCorrect ? '#10b981' : '#f59e0b'}`,
-                                borderRadius: '8px',
-                                padding: '12px 16px',
+                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(56, 189, 248, 0.02)',
+                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.12)'}`,
+                                borderLeft: `4px solid ${isCorrect ? '#10b981' : 'var(--accent-cyan)'}`,
+                                borderRadius: '10px',
+                                padding: '14px 18px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)'
                               }}
                             >
-                              <div style={{ color: isCorrect ? '#34d399' : '#facc15', fontSize: '0.7rem', fontWeight: 800, marginBottom: '4px', textTransform: 'uppercase' }}>
-                                {isCorrect ? '✓ Matched' : '★ Correct spec copy'}
+                              <div style={{ color: isCorrect ? '#34d399' : 'var(--accent-cyan)', fontSize: '0.68rem', fontWeight: 800, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                {isCorrect ? '✓ Matched Copy' : '📄 Expected Spec Copy'}
                               </div>
-                              <div style={{ color: '#fff', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                              <div style={{ color: '#fff', fontSize: '0.82rem', lineHeight: 1.45, fontWeight: 500 }}>
                                 {item.expected}
                               </div>
                             </div>
-
+ 
                             {/* Right Side: Website Content */}
                             <div 
                               style={{
-                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(239, 68, 68, 0.05)',
-                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.2)'}`,
-                                borderLeft: `4px solid ${isCorrect ? '#10b981' : '#ef4444'}`,
-                                borderRadius: '8px',
-                                padding: '12px 16px',
+                                background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(244, 63, 94, 0.02)',
+                                border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.12)'}`,
+                                borderLeft: `4px solid ${isCorrect ? '#10b981' : '#f43f5e'}`,
+                                borderRadius: '10px',
+                                padding: '14px 18px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)'
                               }}
                             >
                               {isCorrect ? (
-                                <div style={{ color: '#cbd5e1', fontSize: '0.8rem', lineHeight: 1.4 }}>
-                                  {item.found || item.expected}
+                                <div>
+                                  <div style={{ color: '#34d399', fontSize: '0.68rem', fontWeight: 800, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    🌐 Live Website Copy
+                                  </div>
+                                  <div style={{ color: '#cbd5e1', fontSize: '0.82rem', lineHeight: 1.45 }}>
+                                    {item.found || item.expected}
+                                  </div>
                                 </div>
                               ) : (
                                 <div>
-                                  <div style={{ color: '#f87171', fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '4px' }}>
-                                    ❌ Wrong / Missing
+                                  <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                                    ❌ Website Discrepancy Found
                                   </div>
-                                  <div style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.4 }}>
-                                    Found: {item.found || 'None'}
+                                  <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.45, fontStyle: item.found === 'None' ? 'italic' : 'normal' }}>
+                                    Found: <span style={{ color: '#fff', fontWeight: item.found === 'None' ? 400 : 600 }}>{item.found || 'None'}</span>
                                   </div>
                                   {item.recommendation && (
-                                    <div style={{ fontSize: '0.72rem', color: '#cbd5e1', background: 'rgba(239, 68, 68, 0.1)', padding: '6px 10px', borderRadius: '4px', marginTop: '6px' }}>
-                                      <strong>Fix:</strong> {item.recommendation}
+                                    <div style={{ 
+                                      fontSize: '0.74rem', 
+                                      color: 'var(--accent-cyan)', 
+                                      background: 'rgba(56, 189, 248, 0.06)', 
+                                      border: '1px solid rgba(56, 189, 248, 0.15)', 
+                                      padding: '10px 14px', 
+                                      borderRadius: '8px', 
+                                      marginTop: '10px',
+                                      display: 'flex',
+                                      gap: '8px',
+                                      lineHeight: 1.4
+                                    }}>
+                                      <span style={{ fontSize: '1rem', marginTop: '-2px' }}>💡</span>
+                                      <div>
+                                        <strong style={{ color: '#fff', display: 'block', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.3px', fontSize: '0.68rem' }}>Fix Action Required:</strong>
+                                        {item.recommendation}
+                                      </div>
                                     </div>
                                   )}
                                 </div>
