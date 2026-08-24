@@ -56,6 +56,7 @@ body {
   margin: 0 auto;
   padding: 24px 20px 60px;
   width: 100%;
+  flex: 1;
 }
 
 /* NAVBAR */
@@ -1202,6 +1203,91 @@ body {
   color: var(--text-muted);
   max-width: 600px;
   line-height: 1.5;
+}
+
+/* Responsive Grid Classes for Comparison */
+.comparison-grid-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.comparison-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* Mobile responsive breakpoints (Mobile only, no change to desktop) */
+@media (max-width: 768px) {
+  .comparison-grid-header {
+    display: none; /* Hide header row on mobile as it stacks vertically */
+  }
+  .comparison-grid-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Navbar */
+  .navbar-content {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+  }
+  .brand-logo {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  .brand-title {
+    flex-direction: column;
+    align-items: center;
+    font-size: 1.15rem;
+    text-align: center;
+  }
+  .brand-subtitle {
+    font-size: 0.75rem;
+    text-align: center;
+  }
+  .navbar-controls {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Delivery Status Banner */
+  .delivery-status-card {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+    padding: 24px 20px;
+  }
+  .status-header-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  /* Footer responsive wrapping */
+  .footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+    font-size: 0.76rem;
+  }
+  .footer-links span {
+    display: none; /* Hide bullet points and wrap nicely */
+  }
+  .footer-meta-text {
+    font-size: 0.72rem;
+    padding: 0 10px;
+  }
 }
 
 @media print {

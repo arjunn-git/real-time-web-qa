@@ -207,7 +207,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                   <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     
                     {/* Headers */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
+                    <div className="comparison-grid-header">
                       <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         📄 Document Content (Expected / Correct)
                       </div>
@@ -223,12 +223,7 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                         return (
                           <div 
                             key={idx} 
-                            style={{ 
-                              display: 'grid', 
-                              gridTemplateColumns: '1fr 1fr', 
-                              gap: '20px', 
-                              alignItems: 'stretch'
-                            }}
+                            className="comparison-grid-row"
                           >
                             {/* Left Side: Document Content (Correct) */}
                             <div 
