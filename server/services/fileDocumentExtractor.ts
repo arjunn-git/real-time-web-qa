@@ -74,9 +74,12 @@ export async function extractTextFromFileBuffer(
   if (ext === 'pdf' || mimetype.includes('pdf')) {
     let rawPdfText = '';
     try {
-      const pdfData = await pdfParse(buffer);
-      rawPdfText = pdfData.text || '';
-    } catch (e) {
+      const PDFParseClass = pdfParse.PDFParse || pdfParse;
+      const parserInstance = new PDFParseClass({ data: buffer });
+      const parseResult = await parserInstance.getText();
+      rawPdfText = parseResult.text || '';
+    } catch (e: any) {
+      console.warn('[PDF Parsing Failed, falling back to string]', e.message);
       rawPdfText = buffer.toString('utf-8');
     }
 
