@@ -108,6 +108,12 @@ export function isMetadataOrInstructionLine(line: string): boolean {
   if (clean.includes('h1 (hero') || clean.includes('h1:')) return true;
   if (clean.includes('note for the designer') || clean.includes('notes for the designer')) return true;
   if (clean.includes('notes for the qa') || clean.includes('notes for qa')) return true;
+
+  // Exclude page numbers like "- 3 of 8 --" or "Page 3 of 8"
+  if (clean.match(/^-\s*\d+\s*of\s*\d+\s*-*$/) || clean.match(/^page\s*\d+\s*of\s*\d+$/)) return true;
+
+  // Exclude raw placeholder images notation
+  if (clean.match(/^\(?hero image\)?$/) || clean.match(/^\[hero image\]$/) || clean.match(/^image:?$/)) return true;
   
   // Exclude navigation/design action notations like "Text > page"
   if (clean.includes('text > page')) return true;
@@ -127,7 +133,7 @@ export function isMetadataOrInstructionLine(line: string): boolean {
   // Exclude CTA fields
   if (clean.startsWith('title:') && clean.length < 120) return true;
   if (clean.startsWith('text:') && clean.length < 200) return true;
-  
+
   return false;
 }
 
