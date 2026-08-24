@@ -1058,6 +1058,90 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* MODERN GLOWING LOADING STATE */
+.modern-loading-bar-wrapper {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.modern-loading-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8 0%, #a855f7 50%, #6366f1 100%);
+  background-size: 200% auto;
+  border-radius: 6px;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: shine-loading 2s linear infinite;
+}
+
+@keyframes shine-loading {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Pulsing neon border */
+.glowing-scanner-box {
+  animation: pulse-border 2.5s ease-in-out infinite;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(56, 189, 248, 0.2); box-shadow: 0 0 10px rgba(56, 189, 248, 0.05); }
+  50% { border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 0 20px rgba(168, 85, 247, 0.15); }
+  100% { border-color: rgba(56, 189, 248, 0.2); box-shadow: 0 0 10px rgba(56, 189, 248, 0.05); }
+}
+
+/* Loading status steps */
+.loading-steps-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+}
+
+.loading-step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.loading-step-item.active {
+  color: var(--accent-cyan);
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.loading-step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.3s ease;
+}
+
+.loading-step-item.active .loading-step-dot {
+  background: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+  transform: scale(1.2);
+}
+
 @media print {
   body { background: #fff; color: #000; }
   .navbar-container, .input-panel-container, .export-toolbar-container { display: none !important; }

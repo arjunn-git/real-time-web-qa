@@ -182,28 +182,49 @@ export const InputPanel: React.FC<InputPanelProps> = ({
       {/* ACTION & REAL-TIME PROGRESS BAR */}
       <div className="action-bar-container">
         {isAnalyzing ? (
-          <div className="loading-progress-box" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px', width: '100%', padding: '16px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="loading-progress-box glowing-scanner-box" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px', width: '100%', padding: '20px 24px', background: 'var(--bg-card)', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
               <RefreshCw className="spin" size={20} style={{ color: 'var(--accent-cyan)' }} />
-              <span className="progress-title" style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>
+              <span className="progress-title" style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', letterSpacing: '0.3px' }}>
                 {analysisStep || 'Inspecting Website...'}
               </span>
+              <span style={{ marginLeft: 'auto', fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.15)', color: 'var(--accent-cyan)', padding: '2px 10px', borderRadius: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {analysisStep.includes('1.') ? 'Step 1/3' : analysisStep.includes('2.') ? 'Step 2/3' : 'Step 3/3'}
+              </span>
             </div>
-            <span className="progress-sub" style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-              Playwright is crawling pages and running deterministic matching audit...
+            
+            <span className="progress-sub" style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.4 }}>
+              {analysisStep.includes('1.') 
+                ? 'Decompressing document streams and constructing structured copy tree...' 
+                : analysisStep.includes('2.') 
+                  ? 'Crawling live sitemap, validating links, and extracting wix page hierarchy...' 
+                  : 'Running bigram similarity matches and verifying meta & content copy...'}
             </span>
-            <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                height: '100%',
-                width: analysisStep.includes('1.') ? '30%' : analysisStep.includes('2.') ? '65%' : '90%',
-                background: 'linear-gradient(90deg, var(--accent-cyan), #c084fc)',
-                boxShadow: '0 0 10px var(--accent-cyan)',
-                borderRadius: '3px',
-                transition: 'width 0.4s ease'
-              }} />
+
+            {/* Glowing Modern Progress Bar */}
+            <div className="modern-loading-bar-wrapper">
+              <div 
+                className="modern-loading-bar-fill" 
+                style={{
+                  width: analysisStep.includes('1.') ? '30%' : analysisStep.includes('2.') ? '65%' : '90%'
+                }} 
+              />
+            </div>
+
+            {/* Stepper Status Indicators */}
+            <div className="loading-steps-row">
+              <div className={`loading-step-item ${(analysisStep.includes('1.') || analysisStep.includes('2.') || analysisStep.includes('3.')) ? 'active' : ''}`}>
+                <div className="loading-step-dot" />
+                <span>1. Parse spec</span>
+              </div>
+              <div className={`loading-step-item ${(analysisStep.includes('2.') || analysisStep.includes('3.')) ? 'active' : ''}`}>
+                <div className="loading-step-dot" />
+                <span>2. Scrape Site</span>
+              </div>
+              <div className={`loading-step-item ${analysisStep.includes('3.') ? 'active' : ''}`}>
+                <div className="loading-step-dot" />
+                <span>3. QA Delivery</span>
+              </div>
             </div>
           </div>
         ) : (
