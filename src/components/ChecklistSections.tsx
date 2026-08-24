@@ -149,12 +149,17 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                 placeholder="Search text or pages..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '32px', margin: 0, fontSize: '0.8rem', height: '36px' }}
+                style={{ padding: '0 12px 0 32px', margin: 0, fontSize: '0.8rem', height: '36px' }}
               />
             </div>
 
             {/* Page Filter */}
-            <select className="input-field" value={selectedPageFilter} onChange={e => setSelectedPageFilter(e.target.value)} style={{ margin: 0, fontSize: '0.8rem', height: '36px' }}>
+            <select 
+              className="input-field" 
+              value={selectedPageFilter} 
+              onChange={e => setSelectedPageFilter(e.target.value)} 
+              style={{ padding: '0 28px 0 12px', margin: 0, fontSize: '0.8rem', height: '36px', background: 'rgba(9, 13, 22, 0.95)', color: '#fff' }}
+            >
               <option value="ALL">All Pages</option>
               {uniquePages.map((p, i) => <option key={i} value={p}>{p}</option>)}
             </select>
