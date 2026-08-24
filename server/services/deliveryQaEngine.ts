@@ -354,6 +354,101 @@ export function runDeliveryQaEngine(
       `Page found: ${sitePage.url}`
     );
 
+    // Validate page metadata (H1, meta title, meta description)
+    if (docPage.metaTitle) {
+      const expTitle = docPage.metaTitle;
+      const cleanExp = cleanAndNormalize(expTitle);
+      const cleanFnd = cleanAndNormalize(sitePage.metaTitle || '');
+      
+      const match = cleanFnd === cleanExp || cleanFnd.includes(cleanExp) || cleanExp.includes(cleanFnd);
+      let recommendation = undefined;
+      if (!match) {
+        recommendation = `Spelling or copy difference detected in Page Title. Expected: "${expTitle}", Found: "${sitePage.metaTitle || ''}". Please correct the page title.`;
+      }
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        match ? '✅ Correct' : '❌ Missing',
+        pageName,
+        'SEO',
+        'Heading',
+        `Page/Meta Title`,
+        expTitle,
+        match ? expTitle : (sitePage.metaTitle || 'None'),
+        undefined,
+        recommendation
+      );
+      if (!match) missingContentCount++;
+    }
+
+    if (docPage.metaDescription) {
+      const expDesc = docPage.metaDescription;
+      const cleanExp = cleanAndNormalize(expDesc);
+      const cleanFnd = cleanAndNormalize(sitePage.metaDescription || '');
+      
+      const match = cleanFnd === cleanExp || cleanFnd.includes(cleanExp) || cleanExp.includes(cleanFnd);
+      let recommendation = undefined;
+      if (!match) {
+        recommendation = `Spelling or copy difference detected in Meta Description. Expected: "${expDesc}", Found: "${sitePage.metaDescription || ''}". Please correct the meta description.`;
+      }
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        match ? '✅ Correct' : '❌ Missing',
+        pageName,
+        'SEO',
+        'Paragraph',
+        `Meta Description`,
+        expDesc,
+        match ? expDesc : (sitePage.metaDescription || 'None'),
+        undefined,
+        recommendation
+      );
+      if (!match) missingContentCount++;
+    }
+
+    if (docPage.h1) {
+      const expH1 = docPage.h1;
+      const cleanExp = cleanAndNormalize(expH1);
+      
+      // H1 must exactly match one of the parsed H1s on the page
+      const match = sitePage.h1.some(h => cleanAndNormalize(h) === cleanExp);
+      let foundText = sitePage.h1.join(' | ') || 'None';
+      let recommendation = undefined;
+      
+      if (!match) {
+        // Find best partial match
+        let bestScore = 0;
+        let bestBlock = '';
+        sitePage.h1.forEach(h => {
+          const score = calculateSimilarity(expH1, h);
+          if (score > bestScore) {
+            bestScore = score;
+            bestBlock = h;
+          }
+        });
+        
+        if (bestScore >= 0.60) {
+          foundText = bestBlock;
+          recommendation = `Spelling or copy difference detected in H1 Hero Heading. Expected: "${expH1}", Found: "${bestBlock}". Please correct the website hero text.`;
+        } else {
+          recommendation = `The expected H1 Hero Heading "${expH1}" is missing on the live page. Please update the H1 heading.`;
+        }
+      }
+      
+      contentDiscrepancyAdd(
+        contentDiscrepancies,
+        match ? '✅ Correct' : '❌ Missing',
+        pageName,
+        'Hero',
+        'Heading',
+        `H1 Hero Heading`,
+        expH1,
+        match ? expH1 : foundText,
+        undefined,
+        recommendation
+      );
+      if (!match) missingContentCount++;
+    }
+
     const siteSections = sitePage.structuredContent?.sections || [];
 
     docPage.sections.forEach((docSec: any) => {
@@ -440,6 +535,7 @@ export function runDeliveryQaEngine(
           `Heading: ${expH.substring(0, 45)}`,
           expH,
           match ? expH : foundText,
+          undefined,
           recommendation
         );
         if (!match) missingContentCount++;
@@ -498,6 +594,7 @@ export function runDeliveryQaEngine(
             `Paragraph ${idx + 1}`,
             para.substring(0, 70) + (para.length > 70 ? '...' : ''),
             match ? para.substring(0, 70) + (para.length > 70 ? '...' : '') : foundText,
+            undefined,
             recommendation
           );
           if (!match) missingContentCount++;
@@ -548,6 +645,7 @@ export function runDeliveryQaEngine(
             `List Item ${idx + 1}`,
             listVal.substring(0, 70) + (listVal.length > 70 ? '...' : ''),
             match ? listVal.substring(0, 70) + (listVal.length > 70 ? '...' : '') : foundText,
+            undefined,
             recommendation
           );
           if (!match) missingContentCount++;

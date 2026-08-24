@@ -1,0 +1,3003 @@
+{
+  "websiteDeliveryStatus": "MAJOR ISSUES FOUND",
+  "totalIssuesCount": 68,
+  "summaryMetrics": {
+    "totalPagesChecked": 5,
+    "totalSectionsChecked": 20,
+    "totalComponentsChecked": 224,
+    "totalCorrect": 156,
+    "totalMissing": 68
+  },
+  "counters": {
+    "missingContent": 68,
+    "brokenLinks": 0,
+    "missingButtons": 0,
+    "seoIssues": 0,
+    "contactIssues": 0,
+    "formIssues": 0
+  },
+  "pageWiseReport": [
+    {
+      "name": "Home",
+      "url": "https://www.gmrdecorators.co.uk/",
+      "status": "Requires Changes",
+      "missingContent": [
+        "H1 Hero Heading",
+        "Heading: H2",
+        "Paragraph 3",
+        "Paragraph 12",
+        "Paragraph 20",
+        "Paragraph 22",
+        "Paragraph 24",
+        "Paragraph 26",
+        "Paragraph 28",
+        "Paragraph 30",
+        "Paragraph 32",
+        "Paragraph 34",
+        "Paragraph 36",
+        "Paragraph 38",
+        "Paragraph 40",
+        "CTA Button: Plastering & Rendering",
+        "CTA Button: Contact Us",
+        "CTA Button: Contact Us Now",
+        "Section Exists: CTA",
+        "Heading: CTA",
+        "CTA Button: Button Enquire Today"
+      ],
+      "missingSections": [
+        "Hero",
+        "General",
+        "CTA"
+      ],
+      "additionalContent": [],
+      "passedChecks": [
+        "Page Exists: Home",
+        "Page/Meta Title",
+        "Meta Description",
+        "Section Exists: Hero",
+        "Paragraph 1",
+        "Paragraph 2",
+        "Paragraph 3",
+        "Paragraph 4",
+        "Paragraph 5",
+        "Paragraph 6",
+        "Paragraph 7",
+        "Paragraph 8",
+        "Section Exists: General",
+        "Paragraph 1",
+        "Paragraph 2",
+        "Paragraph 4",
+        "Paragraph 5",
+        "Paragraph 6",
+        "Paragraph 7",
+        "Paragraph 8",
+        "Paragraph 9",
+        "Paragraph 10",
+        "Paragraph 11",
+        "Paragraph 13",
+        "Paragraph 14",
+        "Paragraph 15",
+        "Paragraph 16",
+        "Paragraph 17",
+        "Paragraph 18",
+        "Paragraph 19",
+        "Paragraph 21",
+        "Paragraph 23",
+        "Paragraph 25",
+        "Paragraph 27",
+        "Paragraph 29",
+        "Paragraph 31",
+        "Paragraph 33",
+        "Paragraph 35",
+        "Paragraph 37",
+        "Paragraph 39",
+        "CTA Button: Painting & Decorating",
+        "CTA Button: Property Woodwork",
+        "Paragraph 1",
+        "Paragraph 2"
+      ]
+    },
+    {
+      "name": "Painting And Decorating",
+      "url": "https://www.gmrdecorators.co.uk/painting-and-decorating",
+      "status": "Passed",
+      "missingContent": [],
+      "missingSections": [],
+      "additionalContent": [],
+      "passedChecks": []
+    },
+    {
+      "name": "Plastering And Render Repairs",
+      "url": "https://www.gmrdecorators.co.uk/plastering-and-render-repairs",
+      "status": "Passed",
+      "missingContent": [],
+      "missingSections": [],
+      "additionalContent": [],
+      "passedChecks": []
+    },
+    {
+      "name": "Property Maintenance And Woodwork",
+      "url": "https://www.gmrdecorators.co.uk/property-maintenance-and-woodwork",
+      "status": "Passed",
+      "missingContent": [],
+      "missingSections": [],
+      "additionalContent": [],
+      "passedChecks": []
+    },
+    {
+      "name": "Contact",
+      "url": "https://www.gmrdecorators.co.uk/contact-us",
+      "status": "Passed",
+      "missingContent": [],
+      "missingSections": [],
+      "additionalContent": [],
+      "passedChecks": []
+    }
+  ],
+  "contentDiscrepancies": [
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Navigation",
+      "component": "Paragraph",
+      "item": "Page Exists: Home",
+      "expected": "Page \"Home\" exists",
+      "found": "Page found: https://www.gmrdecorators.co.uk/"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "SEO",
+      "component": "Heading",
+      "item": "Page/Meta Title",
+      "expected": "Property Maintenance | Sudbury | GMR Decorators",
+      "found": "Property Maintenance | Sudbury | GMR Decorators"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "SEO",
+      "component": "Paragraph",
+      "item": "Meta Description",
+      "expected": "GMR Decorators provides property maintenance in Sudbury, covering decorating, repairs, carpentry, woodwork and garden services for homes and properties.",
+      "found": "GMR Decorators provides property maintenance in Sudbury, covering decorating, repairs, carpentry, woodwork and garden services for homes and properties."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "H1 Hero Heading",
+      "expected": "Property maintenance in Sudbury,",
+      "found": "Property maintenance in Sudbury, Suffolk for homes and gardens",
+      "recommendation": "The expected H1 Hero Heading \"Property maintenance in Sudbury,\" is missing on the live page. Please update the H1 heading."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "Section Exists: Hero",
+      "expected": "Section \"Hero\" exists",
+      "found": "Section matched: Hero"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Painting and decorating specialists. Domestic property focus. Wide ran...",
+      "found": "Painting and decorating specialists. Domestic property focus. Wide ran..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "What sets us apart",
+      "found": "What sets us apart"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "One team for connected jobs",
+      "found": "One team for connected jobs"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "We can handle decorating alongside plastering and repair work. That sa...",
+      "found": "We can handle decorating alongside plastering and repair work. That sa..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "Work shaped around real homes",
+      "found": "Work shaped around real homes"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "We mainly focus on domestic properties and the issues that come with e...",
+      "found": "We mainly focus on domestic properties and the issues that come with e..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "Recent work you can look through",
+      "found": "Recent work you can look through"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "We have a portfolio of recent projects available to view. It gives you...",
+      "found": "We have a portfolio of recent projects available to view. It gives you..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "A straightforward way to sort tired properties",
+      "found": "A straightforward way to sort tired properties"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Tired walls, scruffy woodwork, and unfinished repairs can make your wh...",
+      "found": "Tired walls, scruffy woodwork, and unfinished repairs can make your wh..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "We've built our reputation by taking proper care with preparation, fin...",
+      "found": "We've built our reputation by taking proper care with preparation, finishing and the little details that stop a job looking rushed. With around 20 years of trade experience and a City and Guilds of London Institute Painting and Decorating Level 2 Certificate, we help you achieve smart, clean results without the stress of coordinating several different trades.",
+      "recommendation": "Spelling or copy difference detected. Expected: \"We've built our reputation by taking proper care with preparation, finishing and the little details that stop a job looking rushed. With around 5 to 6 years of trade experience and a City and Guilds of London Institute Painting and Decorating Level 2 Certificate, we help you achieve smart, clean results without the stress of coordinating several different trades.\", Found: \"We've built our reputation by taking proper care with preparation, finishing and the little details that stop a job looking rushed. With around 20 years of trade experience and a City and Guilds of London Institute Painting and Decorating Level 2 Certificate, we help you achieve smart, clean results without the stress of coordinating several different trades.\". Please correct the website copy."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "What we offer",
+      "found": "What we offer"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "Painting and decorating",
+      "found": "Painting and decorating"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "We refresh tired interiors and exteriors with careful preparation and ...",
+      "found": "We refresh tired interiors and exteriors with careful preparation and ..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "Plastering and render repairs",
+      "found": "Plastering and render repairs"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "Cracked walls and damaged render can make the whole place feel worn ou...",
+      "found": "Cracked walls and damaged render can make the whole place feel worn ou..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 9",
+      "expected": "Property maintenance",
+      "found": "Property maintenance"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 10",
+      "expected": "From window repairs to door hanging and basic timber work, we take car...",
+      "found": "From window repairs to door hanging and basic timber work, we take car..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 11",
+      "expected": "Why people feel comfortable choosing us",
+      "found": "Why people feel comfortable choosing us"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 12",
+      "expected": "● 5 to 6 years' trade experience",
+      "found": "20 years' trade experience",
+      "recommendation": "Spelling or copy difference detected. Expected: \"● 5 to 6 years' trade experience\", Found: \"20 years' trade experience\". Please correct the website copy."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 13",
+      "expected": "● Domestic property work understood",
+      "found": "● Domestic property work understood"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 14",
+      "expected": "● Several jobs handled together",
+      "found": "● Several jobs handled together"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 15",
+      "expected": "● Clean finishes that lift appearance",
+      "found": "● Clean finishes that lift appearance"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 16",
+      "expected": "● Local service across three counties",
+      "found": "● Local service across three counties"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 17",
+      "expected": "More than just a fresh coat of paint",
+      "found": "More than just a fresh coat of paint"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 18",
+      "expected": "Your property doesn't usually need grand promises. It needs someone wh...",
+      "found": "Your property doesn't usually need grand promises. It needs someone wh..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 19",
+      "expected": "We also take on gardening and landscaping, which helps if your outdoor...",
+      "found": "We also take on gardening and landscaping, which helps if your outdoor..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 20",
+      "expected": "FAQs",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 21",
+      "expected": "What services do you offer?",
+      "found": "What services do you offer?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 22",
+      "expected": "We provide painting and decorating, plastering, render repairs, window...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 23",
+      "expected": "Do you specialise in painting and decorating?",
+      "found": "Do you specialise in painting and decorating?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 24",
+      "expected": "Yes. Painting and decorating is our main service and the core focus of...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 25",
+      "expected": "Do you work on residential properties?",
+      "found": "Do you work on residential properties?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 26",
+      "expected": "Yes. We mainly work with homeowners, providing reliable services for a...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 27",
+      "expected": "Do you take on commercial projects?",
+      "found": "Do you take on commercial projects?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 28",
+      "expected": "Yes. Although most of our work is domestic, we can also take on larger...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 29",
+      "expected": "How much experience do you have?",
+      "found": "How much experience do you have?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 30",
+      "expected": "We have around 5–6 years of experience providing painting, decorating ...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 31",
+      "expected": "What areas do you cover?",
+      "found": "What areas do you cover?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 32",
+      "expected": "We work across Suffolk, Cambridgeshire and Essex, including Ipswich, N...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 33",
+      "expected": "Can you complete repairs before decorating?",
+      "found": "Can you complete repairs before decorating?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 34",
+      "expected": "Yes. We offer plastering, render repairs, basic woodwork and window re...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 35",
+      "expected": "Do you provide door hanging?",
+      "found": "Do you provide door hanging?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 36",
+      "expected": "Yes. We provide door hanging as part of our wider range of practical p...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 37",
+      "expected": "Do you offer gardening and landscaping?",
+      "found": "Do you offer gardening and landscaping?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 38",
+      "expected": "Yes. We also provide gardening and landscaping services to help improv...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 39",
+      "expected": "Can I see examples of your work?",
+      "found": "Can I see examples of your work?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 40",
+      "expected": "Yes. We regularly add photographs of recent projects so customers can ...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Painting & Decorating",
+      "expected": "Painting & Decorating (Painting & Decorating)",
+      "found": "Painting & Decorating",
+      "missingInformation": "Create the button \"Painting & Decorating\" linking to: Painting & Decorating."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Plastering & Rendering",
+      "expected": "Plastering & Rendering (Plastering & Render Repairs)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Plastering & Rendering\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to General section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Property Woodwork",
+      "expected": "Property Woodwork (Property Maintenance)",
+      "found": "Property Woodwork",
+      "missingInformation": "Create the button \"Property Woodwork\" linking to: Property Maintenance."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Us",
+      "expected": "Contact Us (Button)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Contact Us\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to General section on page Home."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Us Now",
+      "expected": "Contact Us Now (Button)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Contact Us Now\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to General section on page Home."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Section Exists: CTA",
+      "expected": "Section \"CTA\" exists on page",
+      "found": "Unable to Match",
+      "missingInformation": "Section \"CTA\" is missing on the \"Home\" page.",
+      "recommendation": "Create the section \"CTA\" on page \"Home\"."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Heading: CTA",
+      "expected": "CTA",
+      "found": "None",
+      "recommendation": "Add the missing heading to CTA section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Looking for property maintenance experts?",
+      "found": "Looking for property maintenance experts?"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Home",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Call us today to enquire about property maintenance.",
+      "found": "Call us today to enquire about property maintenance."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Home",
+      "section": "CTA",
+      "component": "Buttons",
+      "item": "CTA Button: Button Enquire Today",
+      "expected": "Button Enquire Today (Link to 000 000 000)",
+      "found": "None",
+      "missingInformation": "Create the button \"Button Enquire Today\" linking to: Link to 000 000 000.",
+      "recommendation": "Add the missing buttons to CTA section on page Home."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Navigation",
+      "component": "Paragraph",
+      "item": "Page Exists: Painting & Decorating",
+      "expected": "Page \"Painting & Decorating\" exists",
+      "found": "Page found: https://www.gmrdecorators.co.uk/painting-and-decorating"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "SEO",
+      "component": "Heading",
+      "item": "Page/Meta Title",
+      "expected": "Painting & Decorating | Sudbury | GMR Decorators",
+      "found": "Painting & Decorating | Sudbury | GMR Decorators"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "SEO",
+      "component": "Paragraph",
+      "item": "Meta Description",
+      "expected": "Painting and decorating in Sudbury from GMR Decorators, with exterior cleaning, property maintenance and previous work available to view before you choose.",
+      "found": "Painting and decorating in Sudbury from GMR Decorators, with exterior cleaning, property maintenance and previous work available to view before you choose."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "H1 Hero Heading",
+      "expected": "Painting and decorating in Sudbury, Suffolk with previous work to view",
+      "found": "Painting and decorating in Sudbury, Suffolk with previous work to view"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "Section Exists: Hero",
+      "expected": "Section \"Hero\" exists",
+      "found": "Section matched: Hero"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Domestic decorating specialist. Exterior cleaning available. Individua...",
+      "found": "Domestic decorating specialist. Exterior cleaning available. Individua..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Why we excel",
+      "found": "Why we excel"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "We keep the finish looking sharp",
+      "found": "We keep the finish looking sharp"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "Preparation matters, and we don't rush past it. That helps your paintw...",
+      "found": "Preparation matters, and we don't rush past it. That helps your paintw..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "You can book one room or more",
+      "found": "You can book one room or more"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "Some jobs are small and just need a fresh pair of hands. Others cover ...",
+      "found": "Some jobs are small and just need a fresh pair of hands. Others cover ..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "You can see the standard first",
+      "found": "You can see the standard first"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "Previous work is available to view before you commit. That gives you a...",
+      "found": "Previous work is available to view before you commit. That gives you a..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "Hero",
+      "component": "Buttons",
+      "item": "CTA Button: Need Assistance?",
+      "expected": "Need Assistance? (Link to)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Need Assistance?\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to Hero section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Give tired spaces a cleaner, brighter finish",
+      "found": "Give tired spaces a cleaner, brighter finish"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Painting and decorating can do more than change a colour on the wall. ...",
+      "found": "Painting and decorating can do more than change a colour on the wall. ..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "GMR Decorators works on the surrounding area with a practical approach...",
+      "found": "GMR Decorators works on the surrounding area with a practical approach..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "A service that starts with proper preparation",
+      "found": "A service that starts with proper preparation"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Fresh paint only looks right when the groundwork has been done properl...",
+      "found": "Fresh paint only looks right when the groundwork has been done properl..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "Our page details also include exterior cleaning, which can make a real...",
+      "found": "Our page details also include exterior cleaning, which can make a real..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "What you can expect from the job",
+      "found": "What you can expect from the job"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "● Exterior cleaning available",
+      "found": "● Exterior cleaning available"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "● Freshens tired-looking rooms",
+      "found": "● Freshens tired-looking rooms"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "● Clean professional finish",
+      "found": "● Clean professional finish"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "● Suitable for larger projects",
+      "found": "● Suitable for larger projects"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "● Domestic decorating specialists",
+      "found": "● Domestic decorating specialists"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "● Commercial work considered",
+      "found": "● Commercial work considered"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "● Around 5 to 6 years' experience",
+      "found": "Around 20 years' experience",
+      "recommendation": "Spelling or copy difference detected. Expected: \"● Around 5 to 6 years' experience\", Found: \"Around 20 years' experience\". Please correct the website copy."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 9",
+      "expected": "FAQs",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 10",
+      "expected": "Can you take on small painting and decorating jobs as well as larger p...",
+      "found": "Can you take on small painting and decorating jobs as well as larger p..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 11",
+      "expected": "Yes. We can help with individual rooms as well as broader decorating w...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 12",
+      "expected": "Do you only work on homes?",
+      "found": "Do you only work on homes?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 13",
+      "expected": "No. We specialise in domestic painting and decorating, but we also con...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 14",
+      "expected": "Is exterior cleaning included with your painting and decorating servic...",
+      "found": "Is exterior cleaning included with your painting and decorating servic..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 15",
+      "expected": "Exterior cleaning is available as part of our service where needed. It...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Our Team",
+      "expected": "Contact Our Team (Button)",
+      "found": "Contact Our Team",
+      "missingInformation": "Create the button \"Contact Our Team\" linking to: Button."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Our Experts",
+      "expected": "Contact Our Experts (Button)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Contact Our Experts\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to General section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Section Exists: CTA",
+      "expected": "Section \"CTA\" exists",
+      "found": "Section matched: CTA"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Heading: CTA",
+      "expected": "CTA",
+      "found": "None",
+      "recommendation": "Add the missing heading to CTA section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Give your rooms a fresh new look with expert decorating services.",
+      "found": "Give your rooms a fresh new look with expert decorating services."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Painting & Decorating",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Call us today to discuss your painting and decorating plans.",
+      "found": "Call us today to discuss your painting and decorating plans."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Painting & Decorating",
+      "section": "CTA",
+      "component": "Buttons",
+      "item": "CTA Button: Get Assistance",
+      "expected": "Get Assistance (Link to 000 000 000)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Get Assistance\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to CTA section on page Painting & Decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Navigation",
+      "component": "Paragraph",
+      "item": "Page Exists: Plastering & Render Repairs",
+      "expected": "Page \"Plastering & Render Repairs\" exists",
+      "found": "Page found: https://www.gmrdecorators.co.uk/plastering-and-render-repairs"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "SEO",
+      "component": "Heading",
+      "item": "Page/Meta Title",
+      "expected": "Plastering & Render Repairs | Sudbury | GMR Decorators",
+      "found": "Plastering & Render Repairs | Sudbury | GMR Decorators"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "SEO",
+      "component": "Paragraph",
+      "item": "Meta Description",
+      "expected": "Plastering and render repairs in Sudbury from GMR Decorators, restoring damaged walls and preparing smooth, sound surfaces for painting and decorating.",
+      "found": "Plastering and render repairs in Sudbury from GMR Decorators, restoring damaged walls and preparing smooth, sound surfaces for painting and decorating."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "H1 Hero Heading",
+      "expected": "Plastering and render repairs across Sudbury, Suffolk from one tradesman",
+      "found": "Plastering and render repairs across Sudbury, Suffolk from one tradesman"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "Section Exists: Hero",
+      "expected": "Section \"Hero\" exists",
+      "found": "Section matched: Hero"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Damaged plaster repaired neatly. Render patched for a cleaner finish. ...",
+      "found": "Damaged plaster repaired neatly. Render patched for a cleaner finish. ..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Distinctive expertise",
+      "found": "Distinctive expertise"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "Repairs that support decorating",
+      "found": "Repairs that support decorating"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "We fix the surface before the paint goes on. That gives you a neater f...",
+      "found": "We fix the surface before the paint goes on. That gives you a neater f..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "Domestic work with a practical eye",
+      "found": "Domestic work with a practical eye"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "We focus on the sort of wall and render issues that crop up in real ho...",
+      "found": "We focus on the sort of wall and render issues that crop up in real ho..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "One point of contact throughout",
+      "found": "One point of contact throughout"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "We handle the repair work ourselves from start to finish. That keeps t...",
+      "found": "We handle the repair work ourselves from start to finish. That keeps t..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "Hero",
+      "component": "Buttons",
+      "item": "CTA Button: Have Any Questions?",
+      "expected": "Have Any Questions? (Link to)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Have Any Questions?\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to Hero section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Repair tired walls before they get worse",
+      "found": "Repair tired walls before they get worse"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Cracked plaster, blown patches and worn render can make your home look...",
+      "found": "Cracked plaster, blown patches and worn render can make your home look..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "With around 5 to 6 years of experience, we know how to deal with the s...",
+      "found": "With around 20 years of experience, we know how to deal with the sort of everyday wall problems that show up in domestic properties. We carry out practical property improvements, keeping the job straightforward and tidy.",
+      "recommendation": "Spelling or copy difference detected. Expected: \"With around 5 to 6 years of experience, we know how to deal with the sort of everyday wall problems that show up in domestic properties. We carry out practical property improvements, keeping the job straightforward and tidy.\", Found: \"With around 20 years of experience, we know how to deal with the sort of everyday wall problems that show up in domestic properties. We carry out practical property improvements, keeping the job straightforward and tidy.\". Please correct the website copy."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "A sensible fix before decorating starts",
+      "found": "A sensible fix before decorating starts"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Fresh paint will only highlight dips, cracks and rough patches if the ...",
+      "found": "Fresh paint will only highlight dips, cracks and rough patches if the ..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "The right preparation for a lasting finish",
+      "found": "The right preparation for a lasting finish"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Sound plaster and render give painting, decorating, wallpaper and fini...",
+      "found": "Sound plaster and render give painting, decorating, wallpaper and fini..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "FAQs",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "When should you book plastering and render repairs before decorating?",
+      "found": "When should you book plastering and render repairs before decorating?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "It's best to book repairs before any painting or wallpapering begins. ...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "Are plastering and render repairs suitable for small domestic jobs?",
+      "found": "Are plastering and render repairs suitable for small domestic jobs?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "Yes, this service is ideal for domestic property improvements. If you'...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "Can we carry out decorating after the repair work?",
+      "found": "Can we carry out decorating after the repair work?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 9",
+      "expected": "Yes, that can be a convenient option. Because we also handle painting ...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Us",
+      "expected": "Contact Us (Button)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Contact Us\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Us Today",
+      "expected": "Contact Us Today (Button)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Contact Us Today\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to General section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Section Exists: CTA",
+      "expected": "Section \"CTA\" exists",
+      "found": "Section matched: CTA"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Heading: CTA",
+      "expected": "CTA",
+      "found": "None",
+      "recommendation": "Add the missing heading to CTA section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Get damaged walls repaired and restored professionally.",
+      "found": "Get damaged walls repaired and restored professionally."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Plastering & Render Repairs",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Call us today to arrange your plastering and render repairs.",
+      "found": "Call us today to arrange your plastering and render repairs."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Plastering & Render Repairs",
+      "section": "CTA",
+      "component": "Buttons",
+      "item": "CTA Button: Ask A Question",
+      "expected": "Ask A Question (Link to 000 000 000)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Ask A Question\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to CTA section on page Plastering & Render Repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Navigation",
+      "component": "Paragraph",
+      "item": "Page Exists: Property Maintenance & Woodwork",
+      "expected": "Page \"Property Maintenance & Woodwork\" exists",
+      "found": "Page found: https://www.gmrdecorators.co.uk/property-maintenance-and-woodwork"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "SEO",
+      "component": "Heading",
+      "item": "Page/Meta Title",
+      "expected": "Property Upkeep & Woodwork | Sudbury | GMR Decorators",
+      "found": "Property Upkeep & Woodwork | Sudbury | GMR Decorators"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "SEO",
+      "component": "Paragraph",
+      "item": "Meta Description",
+      "expected": "Property upkeep and woodwork services in Sudbury from GMR Decorators, including window repairs, door hanging, carpentry and general home repairs.",
+      "found": "Property upkeep and woodwork services in Sudbury from GMR Decorators, including window repairs, door hanging, carpentry and general home repairs."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "H1 Hero Heading",
+      "expected": "Property upkeep and woodwork in Sudbury, Suffolk with window repairs",
+      "found": "Property upkeep and woodwork in Sudbury, Suffolk with window repairs"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "Section Exists: Hero",
+      "expected": "Section \"Hero\" exists",
+      "found": "Section matched: Hero"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Also catering to commercial projects. Door hanging with neat finishing...",
+      "found": "Also catering to commercial projects. Door hanging with neat finishing..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Proven excellence",
+      "found": "Proven excellence"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "Repairs that support decorating work",
+      "found": "Repairs that support decorating work"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "We deal with the timber issues that can spoil a freshly finished room....",
+      "found": "We deal with the timber issues that can spoil a freshly finished room...."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "Several jobs handled in one go",
+      "found": "Several jobs handled in one go"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "We can tackle more than one maintenance task during the same visit. Th...",
+      "found": "We can tackle more than one maintenance task during the same visit. Th..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "Work shaped around domestic homes",
+      "found": "Work shaped around domestic homes"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "We mainly focus on residential properties, so we know how to work neat...",
+      "found": "We mainly focus on residential properties, so we know how to work neat..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "Hero",
+      "component": "Buttons",
+      "item": "CTA Button: Ready To Get Started?",
+      "expected": "Ready To Get Started? (Link to)",
+      "found": "Ready To Get Started?",
+      "missingInformation": "Create the button \"Ready To Get Started?\" linking to: Link to."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Practical help for the jobs that keep piling up",
+      "found": "Practical help for the jobs that keep piling up"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Small woodwork problems have a habit of making a whole room feel tired...",
+      "found": "Small woodwork problems have a habit of making a whole room feel tired..."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "Our work fits naturally alongside painting and decorating, so you can ...",
+      "found": "Our work fits naturally alongside painting and decorating, so you can sort the repair work before the final finish goes on. We take on several maintenance jobs together at GMR Decorators, which saves you the hassle of arranging separate trades for each one. With around 20 years of experience, we keep the work straightforward, tidy, and focused on what your home actually needs.",
+      "recommendation": "Spelling or copy difference detected. Expected: \"Our work fits naturally alongside painting and decorating, so you can sort the repair work before the final finish goes on. We take on several maintenance jobs together at GMR Decorators, which saves you the hassle of arranging separate trades for each one. With around 5 to 6 years of experience, we keep the work straightforward, tidy, and focused on what your home actually needs.\", Found: \"Our work fits naturally alongside painting and decorating, so you can sort the repair work before the final finish goes on. We take on several maintenance jobs together at GMR Decorators, which saves you the hassle of arranging separate trades for each one. With around 20 years of experience, we keep the work straightforward, tidy, and focused on what your home actually needs.\". Please correct the website copy."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "A sensible way to tackle home improvements",
+      "found": "A sensible way to tackle home improvements"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Your home often needs more than one small repair at a time, and that's...",
+      "found": "Your home often needs more than one small repair at a time, and that's..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Heading",
+      "item": "Section Exists: General",
+      "expected": "Section \"General\" exists",
+      "found": "Section matched: General"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Heading",
+      "item": "Heading: H2",
+      "expected": "H2",
+      "found": "None",
+      "recommendation": "Add the missing heading to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "What we can sort out for your home",
+      "found": "What we can sort out for your home"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "● Basic domestic woodwork repairs",
+      "found": "● Basic domestic woodwork repairs"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "● Window repair work available",
+      "found": "● Window repair work available"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "● Door hanging for home improvements",
+      "found": "● Door hanging for home improvements"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "● Multiple maintenance jobs together",
+      "found": "● Multiple maintenance jobs together"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "● Ideal before decorating starts",
+      "found": "● Ideal before decorating starts"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "● Helps improve your property's appearance",
+      "found": "● Helps improve your property's appearance"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "● Mainly for residential properties",
+      "found": "● Mainly for residential properties"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 9",
+      "expected": "FAQs",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 10",
+      "expected": "What kind of woodwork jobs do you handle?",
+      "found": "What kind of woodwork jobs do you handle?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 11",
+      "expected": "We take care of basic domestic woodwork, including small repairs, wind...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 12",
+      "expected": "Can you do maintenance jobs before decorating starts?",
+      "found": "Can you do maintenance jobs before decorating starts?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 13",
+      "expected": "Yes, and that's often the best time to do them. Fixing damaged wood, a...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 14",
+      "expected": "Do you only work on large property maintenance projects?",
+      "found": "Do you only work on large property maintenance projects?"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Paragraph",
+      "item": "Paragraph 15",
+      "expected": "No, smaller jobs are a key part of our service. We can also group seve...",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Us Now",
+      "expected": "Contact Us Now (Button)",
+      "found": "Text only (no click action)",
+      "missingInformation": "The text \"Contact Us Now\" exists, but it is not a working button. Convert it into a button link.",
+      "recommendation": "Add the missing buttons to General section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "General",
+      "component": "Buttons",
+      "item": "CTA Button: Contact Our Team",
+      "expected": "Contact Our Team (Button)",
+      "found": "Contact Our Team",
+      "missingInformation": "Create the button \"Contact Our Team\" linking to: Button."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Section Exists: CTA",
+      "expected": "Section \"CTA\" exists on page",
+      "found": "Unable to Match",
+      "missingInformation": "Section \"CTA\" is missing on the \"Property Maintenance & Woodwork\" page.",
+      "recommendation": "Create the section \"CTA\" on page \"Property Maintenance & Woodwork\"."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "CTA",
+      "component": "Heading",
+      "item": "Heading: CTA",
+      "expected": "CTA",
+      "found": "None",
+      "recommendation": "Add the missing heading to CTA section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "Got a list of jobs that need sorting?",
+      "found": "Got a list of jobs that need sorting?"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Property Maintenance & Woodwork",
+      "section": "CTA",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Call us today to discuss property upkeep and woodwork repairs.",
+      "found": "Call us today to discuss property upkeep and woodwork repairs."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Property Maintenance & Woodwork",
+      "section": "CTA",
+      "component": "Buttons",
+      "item": "CTA Button: Start Your Enquiry",
+      "expected": "Start Your Enquiry (Link to 000 000 000)",
+      "found": "#action",
+      "missingInformation": "Update button \"Start Your Enquiry\" link: currently links to \"#action\", but should link to \"000 000 000\".",
+      "recommendation": "Add the missing buttons to CTA section on page Property Maintenance & Woodwork."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Navigation",
+      "component": "Paragraph",
+      "item": "Page Exists: Contact Us",
+      "expected": "Page \"Contact Us\" exists",
+      "found": "Page found: https://www.gmrdecorators.co.uk/contact-us"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "SEO",
+      "component": "Heading",
+      "item": "Page/Meta Title",
+      "expected": "Professional Decorators | Sudbury | GMR Decorators",
+      "found": "Professional Decorators | Sudbury | GMR Decorators"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "SEO",
+      "component": "Paragraph",
+      "item": "Meta Description",
+      "expected": "Contact GMR Decorators in Sudbury for painting, decorating, plastering and property repairs across the area. Call our professional decorators on 01787 540619.",
+      "found": "Contact GMR Decorators in Sudbury for painting, decorating, plastering and property repairs across the area. Call our professional decorators on 01787 540619."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "H1 Hero Heading",
+      "expected": "Professional decorators in Sudbury, Suffolk with Level 2 qualification",
+      "found": "Professional decorators in Sudbury, Suffolk with Level 2 qualification"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Heading",
+      "item": "Section Exists: Hero",
+      "expected": "Section \"Hero\" exists",
+      "found": "Section matched: Hero"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 1",
+      "expected": "GMR Decorators provides painting, decorating, plastering, woodwork, do...",
+      "found": "GMR Decorators provides painting, decorating, plastering, woodwork, do..."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 2",
+      "expected": "Discuss your needs",
+      "found": "Discuss your needs"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 3",
+      "expected": "Name*",
+      "found": "Name*"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 4",
+      "expected": "Email*",
+      "found": "Email*"
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 5",
+      "expected": "Phone*",
+      "found": "Phone*"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 6",
+      "expected": "Which service are you interested in? * DROPDOWN",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 7",
+      "expected": "Painting & Decorating",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 8",
+      "expected": "Plastering & Render Repairs",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 9",
+      "expected": "Property Maintenance & Woodwork",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 10",
+      "expected": "Message",
+      "found": "Message"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 11",
+      "expected": "Get in touch with our team",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 12",
+      "expected": "How can we help?*",
+      "found": "How can we help?*"
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 13",
+      "expected": "● Service enquiry",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 14",
+      "expected": "● Quotes & Costing",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 15",
+      "expected": "● Customer Support",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Paragraph",
+      "item": "Paragraph 16",
+      "expected": "● Other",
+      "found": "None",
+      "recommendation": "Add the missing paragraph to Hero section on page Contact Us."
+    },
+    {
+      "type": "❌ Missing",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Buttons",
+      "item": "CTA Button: Capital Case",
+      "expected": "Capital Case (Link to form/email)",
+      "found": "None",
+      "missingInformation": "Create the button \"Capital Case\" linking to: Link to form/email.",
+      "recommendation": "Add the missing buttons to Hero section on page Contact Us."
+    },
+    {
+      "type": "✅ Correct",
+      "page": "Contact Us",
+      "section": "Hero",
+      "component": "Buttons",
+      "item": "CTA Button: Submit",
+      "expected": "Submit (gmrdecorators@gmail.com)",
+      "found": "Submit",
+      "missingInformation": "Create the button \"Submit\" linking to: gmrdecorators@gmail.com."
+    }
+  ],
+  "buttonsReport": {
+    "totalCount": 82,
+    "validCount": 26,
+    "missingActionCount": 56,
+    "brokenCount": 0,
+    "items": [
+      {
+        "name": "Skip to Main Content",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "01787 540619",
+        "page": "Home",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Get In Touch",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Search",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Our Service ",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Home",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Enquire Now",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Painting & Decorating",
+        "page": "Home",
+        "href": "https://www.gmrdecorators.co.uk/painting-and-decorating",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Pla tering & Rendering",
+        "page": "Home",
+        "href": "https://www.gmrdecorators.co.uk/plastering-and-render-repairs",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Property Woodwork",
+        "page": "Home",
+        "href": "https://www.gmrdecorators.co.uk/property-maintenance-and-woodwork",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Contact U ",
+        "page": "Home",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Contact U  Now",
+        "page": "Home",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "What  ervice  do you offer?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Do you  peciali e in painting and decorating?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Do you work on re idential propertie ?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Do you take on commercial project ?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "How much experience do you have?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "What area  do you cover?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Can you complete repair  before decorating?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Do you provide door hanging?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Do you offer gardening and land caping?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Can I  ee example  of your work?",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Home",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Enquire Today",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Setting ",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Decline All",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Accept",
+        "page": "Home",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Skip to Main Content",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "01787 540619",
+        "page": "Painting And Decorating",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Get In Touch",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Search",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Our Service ",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Painting And Decorating",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Need A i tance?",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Contact Our Team",
+        "page": "Painting And Decorating",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Contact Our Expert ",
+        "page": "Painting And Decorating",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Do you only work on home ?",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Painting And Decorating",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Get A i tance",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Setting ",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Decline All",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Accept",
+        "page": "Painting And Decorating",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Skip to Main Content",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "01787 540619",
+        "page": "Plastering And Render Repairs",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Get In Touch",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Search",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Our Service ",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Plastering And Render Repairs",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Have Any Que tion ?",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Contact U ",
+        "page": "Plastering And Render Repairs",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Contact U  Today",
+        "page": "Plastering And Render Repairs",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Can we carry out decorating after the repair work?",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Plastering And Render Repairs",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "A k A Que tion",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Setting ",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Decline All",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Accept",
+        "page": "Plastering And Render Repairs",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Skip to Main Content",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "01787 540619",
+        "page": "Property Maintenance And Woodwork",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Get In Touch",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Search",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Our Service ",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Property Maintenance And Woodwork",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Ready To Get Started?",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Contact U  Now",
+        "page": "Property Maintenance And Woodwork",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "Contact Our Team",
+        "page": "Property Maintenance And Woodwork",
+        "href": "https://www.gmrdecorators.co.uk/contact-us",
+        "actionType": "Internal Page Link",
+        "isValid": true,
+        "statusLabel": "Internal Page Link (Valid)"
+      },
+      {
+        "name": "What kind of woodwork job  do you handle?",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Call: 01787 540619",
+        "page": "Property Maintenance And Woodwork",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Start Your Enquiry",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Setting ",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Decline All",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Accept",
+        "page": "Property Maintenance And Woodwork",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Skip to Main Content",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "01787 540619",
+        "page": "Contact",
+        "href": "tel:+441787540619",
+        "actionType": "Phone Link",
+        "isValid": true,
+        "statusLabel": "Phone Link (Valid)"
+      },
+      {
+        "name": "Get In Touch",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Search",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Our Service ",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Choo e one",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Opens Lead Form",
+        "isValid": true,
+        "statusLabel": "Opens Lead Form (Valid)"
+      },
+      {
+        "name": "Submit",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Opens Lead Form",
+        "isValid": true,
+        "statusLabel": "Opens Lead Form (Valid)"
+      },
+      {
+        "name": "Setting ",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Decline All",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      },
+      {
+        "name": "Accept",
+        "page": "Contact",
+        "href": "#",
+        "actionType": "Missing Action",
+        "isValid": false,
+        "statusLabel": "Missing Action"
+      }
+    ]
+  },
+  "linksReport": {
+    "workingCount": 69,
+    "brokenCount": 0,
+    "missingCount": 62,
+    "items": [
+      {
+        "name": "Privacy Policy",
+        "href": "/privacy-policy",
+        "status": "Missing Link"
+      },
+      {
+        "name": "Terms",
+        "href": "/terms",
+        "status": "Missing Link"
+      },
+      {
+        "name": "Contact",
+        "href": "/contact",
+        "status": "Working"
+      }
+    ]
+  },
+  "contactInfoReport": {
+    "phone": {
+      "status": "Present",
+      "value": "+441787540619"
+    },
+    "email": {
+      "status": "Present",
+      "value": "gmrdecorators@gmail.com",
+      "expected": "gmrdecorators@gmail.com"
+    },
+    "address": {
+      "status": "Present",
+      "value": "Postcode: CO10 0ZQ"
+    },
+    "socials": [
+      {
+        "platform": "Whatsapp",
+        "expected": "Found on Website",
+        "found": "None",
+        "status": "Missing"
+      }
+    ]
+  },
+  "seoQuickCheck": {
+    "overallStatus": "Passed",
+    "metaTitle": "Passed",
+    "metaDescription": "Passed",
+    "h1": "Passed",
+    "altText": "Passed",
+    "details": [
+      {
+        "page": "Home",
+        "metaTitleStatus": "Passed",
+        "metaDescStatus": "Passed",
+        "h1Status": "Passed",
+        "altTextStatus": "Passed"
+      },
+      {
+        "page": "Painting And Decorating",
+        "metaTitleStatus": "Passed",
+        "metaDescStatus": "Passed",
+        "h1Status": "Passed",
+        "altTextStatus": "Passed"
+      },
+      {
+        "page": "Plastering And Render Repairs",
+        "metaTitleStatus": "Passed",
+        "metaDescStatus": "Passed",
+        "h1Status": "Passed",
+        "altTextStatus": "Passed"
+      },
+      {
+        "page": "Property Maintenance And Woodwork",
+        "metaTitleStatus": "Passed",
+        "metaDescStatus": "Passed",
+        "h1Status": "Passed",
+        "altTextStatus": "Passed"
+      },
+      {
+        "page": "Contact",
+        "metaTitleStatus": "Passed",
+        "metaDescStatus": "Passed",
+        "h1Status": "Passed",
+        "altTextStatus": "Missing"
+      }
+    ]
+  },
+  "formsReport": {
+    "contactForm": "Passed",
+    "newsletterForm": "Passed",
+    "quoteForm": "Passed"
+  }
+}

@@ -13,6 +13,9 @@ export interface StructuredSection {
 
 export interface StructuredPage {
   name: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  h1?: string;
   sections: StructuredSection[];
 }
 
@@ -201,6 +204,22 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
         // Paragraphs, buttons, and contact info
         if (tagName === 'p') {
           if (!textVal) return;
+
+          // Extract page metadata
+          const normLine = textVal.replace(/\s+/g, ' ').trim();
+          const titleMatch = normLine.match(/^(?:page\/meta title|page title)\s*[:|]?\s*(.+)/i);
+          if (titleMatch) {
+            currentPage.metaTitle = titleMatch[1].trim();
+          }
+          const descMatch = normLine.match(/^meta description\s*[:|]?\s*(.+)/i);
+          if (descMatch) {
+            currentPage.metaDescription = descMatch[1].trim();
+          }
+          const h1Match = normLine.match(/^(?:h1\s*\(hero image text\)|h1\s*\(hero\)|h1)\s*[:|]?\s*(.+)/i);
+          if (h1Match) {
+            currentPage.h1 = h1Match[1].trim();
+          }
+
           if (isMetadataOrInstructionLine(textVal)) return;
 
           // Check if this looks like a button/CTA
@@ -293,6 +312,21 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
       return;
     }
 
+    // Extract page metadata
+    const normLine = line.replace(/\s+/g, ' ').trim();
+    const titleMatch = normLine.match(/^(?:page\/meta title|page title)\s*[:|]?\s*(.+)/i);
+    if (titleMatch) {
+      currentPage.metaTitle = titleMatch[1].trim();
+    }
+    const descMatch = normLine.match(/^meta description\s*[:|]?\s*(.+)/i);
+    if (descMatch) {
+      currentPage.metaDescription = descMatch[1].trim();
+    }
+    const h1Match = normLine.match(/^(?:h1\s*\(hero image text\)|h1\s*\(hero\)|h1)\s*[:|]?\s*(.+)/i);
+    if (h1Match) {
+      currentPage.h1 = h1Match[1].trim();
+    }
+
     if (isMetadataOrInstructionLine(line)) return;
 
     // 1. CTA Buttons (Check BEFORE headings to prevent [Button] > Link matching heading pattern)
@@ -380,6 +414,9 @@ function cleanEmptyPagesAndSections(doc: StructuredDocument): StructuredDocument
     if (cleanedSections.length > 0) {
       cleanedPages.push({
         name: p.name,
+        metaTitle: p.metaTitle,
+        metaDescription: p.metaDescription,
+        h1: p.h1,
         sections: cleanedSections
       });
     }
