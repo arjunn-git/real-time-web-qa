@@ -114,7 +114,8 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
   if (html && html.trim().length > 0) {
     try {
       const $ = cheerio.load(html);
-      let currentPage: any = null;
+      let currentPage: any = { name: 'Home', sections: [] };
+      let hasCreatedCustomPage = false;
       let currentSection: StructuredSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
 
       // Helper to push current section
@@ -142,13 +143,14 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
         // Check if paragraph contains page marker, e.g. "Home (Page 1)"
         const pageMatch = textVal.match(/^(.*?)\s*\(Page\s*(\d+)\)$/i);
         if (pageMatch) {
-          if (currentPage) {
+          if (hasCreatedCustomPage || currentPage.sections.length > 0) {
             commitCurrentSection();
             if (currentPage.sections.length > 0) {
               pages.push({ ...currentPage });
             }
           }
           currentPage = { name: pageMatch[1].trim(), sections: [] };
+          hasCreatedCustomPage = true;
           currentSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
           return;
         }
@@ -241,7 +243,7 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
       });
 
       // Commit last remaining section & page
-      if (currentPage) {
+      if (currentPage && (hasCreatedCustomPage || currentPage.sections.length > 0)) {
         commitCurrentSection();
         if (currentPage.sections.length > 0) {
           pages.push(currentPage);
@@ -262,7 +264,8 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
     .map(l => normalizeString(l))
     .filter(Boolean);
 
-  let currentPage: StructuredPage | null = null;
+  let currentPage: StructuredPage = { name: 'Home', sections: [] };
+  let hasCreatedCustomPage = false;
   let currentSection: StructuredSection = {
     name: 'Hero',
     paragraphs: [],
@@ -299,9 +302,12 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
     // Check if the line is a page divider, e.g. "Home (Page 1)"
     const pageMatch = line.match(/^(.*?)\s*\(Page\s*(\d+)\)$/i);
     if (pageMatch) {
-      commitPage();
+      if (hasCreatedCustomPage || currentPage.sections.length > 0) {
+        commitPage();
+      }
       const pageName = pageMatch[1].trim();
       currentPage = { name: pageName, sections: [] };
+      hasCreatedCustomPage = true;
       currentSection = {
         name: 'Hero',
         paragraphs: [],
@@ -310,11 +316,6 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
         tables: [],
         forms: []
       };
-      return;
-    }
-
-    if (!currentPage) {
-      // Ignore global document metadata/briefing lines before the first page division
       return;
     }
 
@@ -378,7 +379,9 @@ export function parseDocumentToHierarchy(rawText: string, html?: string): Struct
     currentSection.paragraphs.push(line);
   });
 
-  commitPage();
+  if (currentPage && (hasCreatedCustomPage || currentPage.sections.length > 0)) {
+    commitPage();
+  }
 
   return cleanEmptyPagesAndSections({ pages });
 }

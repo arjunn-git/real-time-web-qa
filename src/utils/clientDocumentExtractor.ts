@@ -145,7 +145,8 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
     try {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
-      let currentPage: any = null;
+      let currentPage: any = { name: 'Home', sections: [] };
+      let hasCreatedCustomPage = false;
       let currentSection: any = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
 
       const commitSection = () => {
@@ -165,13 +166,14 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
         // Check for page divider, e.g. "Home (Page 1)"
         const pageMatch = textVal.match(/^(.*?)\s*\(Page\s*(\d+)\)$/i);
         if (pageMatch) {
-          if (currentPage) {
+          if (hasCreatedCustomPage || currentPage.sections.length > 0) {
             commitSection();
             if (currentPage.sections.length > 0) {
               pages.push({ ...currentPage });
             }
           }
           currentPage = { name: pageMatch[1].trim(), sections: [] };
+          hasCreatedCustomPage = true;
           currentSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
           return;
         }
@@ -187,8 +189,6 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
           }
           return;
         }
-
-        if (!currentPage) return; // Skip content before first page division
 
         if (/^h[1-6]$/.test(tagName)) {
           commitSection();
@@ -245,7 +245,7 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
         }
       });
 
-      if (currentPage) {
+      if (currentPage && (hasCreatedCustomPage || currentPage.sections.length > 0)) {
         commitSection();
         if (currentPage.sections.length > 0) {
           pages.push(currentPage);
@@ -260,7 +260,8 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
 
   // Plaintext fallback splits by custom Page dividers
   const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  let currentPage: any = null;
+  let currentPage: any = { name: 'Home', sections: [] };
+  let hasCreatedCustomPage = false;
   let currentSection: any = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
 
   const commitSectionText = () => {
@@ -282,14 +283,15 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
   lines.forEach(line => {
     const pageMatch = line.match(/^(.*?)\s*\(Page\s*(\d+)\)$/i);
     if (pageMatch) {
-      commitPageText();
+      if (hasCreatedCustomPage || currentPage.sections.length > 0) {
+        commitPageText();
+      }
       const pageName = pageMatch[1].trim();
       currentPage = { name: pageName, sections: [] };
+      hasCreatedCustomPage = true;
       currentSection = { name: 'Hero', paragraphs: [], lists: [], buttons: [], tables: [], forms: [] };
       return;
     }
-
-    if (!currentPage) return; // Skip global brief parameters
 
     const normLine = line.replace(/\s+/g, ' ').trim();
     const titleMatch = normLine.match(/^(?:page\/meta title|page title)\s*[:|]?\s*(.+)/i);
@@ -327,7 +329,9 @@ export function parseDocumentToHierarchyClient(rawText: string, html?: string): 
     }
   });
 
-  commitPageText();
+  if (currentPage && (hasCreatedCustomPage || currentPage.sections.length > 0)) {
+    commitPageText();
+  }
 
   return { pages };
 }
