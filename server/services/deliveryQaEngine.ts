@@ -657,18 +657,36 @@ export function runDeliveryQaEngine(
         docSec.buttons.forEach((btnSpec: string) => {
           let btnText = btnSpec;
           let docIntent = 'Button Action';
-
-          let cleanSpec = btnSpec.replace(/^(hero image button:|button:)/i, '').trim();
+          let cleanSpec = btnSpec.trim();
           if (cleanSpec.includes('>')) {
             const parts = cleanSpec.split('>');
-            btnText = parts[0].replace(/[\[\]]/g, '').trim();
+            btnText = parts[0].trim();
             docIntent = parts[1].trim();
-          } else if (cleanSpec.startsWith('[') && cleanSpec.endsWith(']')) {
-            btnText = cleanSpec.slice(1, -1).trim();
           }
 
+          btnText = cleanButtonText(btnText);
           const cleanDocBtn = cleanAndNormalize(btnText);
-          const webBtn = sitePage.buttons.find(b => cleanAndNormalize(b.text).includes(cleanDocBtn));
+          
+          let webBtn = sitePage.buttons.find(b => {
+            const cleanWeb = cleanAndNormalize(b.text);
+            return cleanWeb.includes(cleanDocBtn) || cleanDocBtn.includes(cleanWeb);
+          });
+          
+          if (!webBtn && sitePage.links) {
+            const webLink = sitePage.links.find(l => {
+              const cleanWeb = cleanAndNormalize(l.text);
+              return cleanWeb.includes(cleanDocBtn) || cleanDocBtn.includes(cleanWeb);
+            });
+            if (webLink) {
+              webBtn = {
+                text: webLink.text,
+                href: webLink.href,
+                actionType: (webLink.href.startsWith('#') || webLink.href.toLowerCase().includes('form')) ? 'Opens Lead Form' : 'Internal Page Link',
+                isValid: true,
+                statusLabel: 'Valid Action Assigned'
+              };
+            }
+          }
           
           let match = false;
           let foundTarget = 'None';
@@ -1010,6 +1028,19 @@ export function runDeliveryQaEngine(
     seoQuickCheck,
     formsReport
   };
+}
+
+export function cleanButtonText(btnSpec: string): string {
+  let text = btnSpec.trim();
+  // Strip outer quotes
+  text = text.replace(/^["']|["']$/g, '').trim();
+  // Strip outer brackets
+  text = text.replace(/^\[|\]$/g, '').trim();
+  // Strip prefixes
+  text = text.replace(/^(hero image button:|button:|cta button:)/i, '').trim();
+  // Strip outer quotes again
+  text = text.replace(/^["']|["']$/g, '').trim();
+  return text;
 }
 
 function contentDiscrepancyAdd(

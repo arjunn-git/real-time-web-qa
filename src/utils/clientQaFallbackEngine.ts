@@ -12,6 +12,15 @@ import type {
 import { parseDocumentContent } from './parser';
 import { cleanPdfBinaryNoise } from './clientDocumentExtractor';
 
+function cleanButtonText(btnSpec: string): string {
+  let text = btnSpec.trim();
+  text = text.replace(/^["']|["']$/g, '').trim();
+  text = text.replace(/^\[|\]$/g, '').trim();
+  text = text.replace(/^(hero image button:|button:|cta button:)/i, '').trim();
+  text = text.replace(/^["']|["']$/g, '').trim();
+  return text;
+}
+
 export function runClientSideQaFallback(docText: string, websiteUrl: string, structuredContent?: any): DeliveryQaReport {
   const cleanUrl = websiteUrl.trim().startsWith('http') ? websiteUrl.trim() : 'https://' + websiteUrl.trim();
   const sanitizedDocText = cleanPdfBinaryNoise(docText);
@@ -154,41 +163,38 @@ export function runClientSideQaFallback(docText: string, websiteUrl: string, str
       p.sections.forEach((s: any) => {
         if (s.buttons) {
           s.buttons.forEach((btn: string) => {
-            let btnText = btn;
-            let cleanSpec = btn.replace(/^(hero image button:|button:)/i, '').trim();
-            if (cleanSpec.includes('>')) {
-              const parts = cleanSpec.split('>');
-              btnText = parts[0].replace(/[\[\]]/g, '').trim();
-            } else if (cleanSpec.startsWith('[') && cleanSpec.endsWith(']')) {
-              btnText = cleanSpec.slice(1, -1).trim();
-            }
-
-            dynamicButtonItems.push({
-              name: btnText,
-              page: pageName,
-              href: '#action',
-              actionType: 'Opens Lead Form / Contact',
-              isValid: true,
-              statusLabel: 'Valid Action Assigned'
-            });
-          });
-        }
-      });
-    });
-  }
-
-  if (dynamicButtonItems.length === 0) {
-    const ctaMatches = sanitizedDocText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order|Estimate|Enquire)\s+[A-Za-z0-9\s]{2,25}/gi);
-    if (ctaMatches && ctaMatches.length > 0) {
-      const uniqueCtas = Array.from(new Set(ctaMatches.map(c => {
-        let clean = c.trim().replace(/^(hero image button:|button:)/i, '').trim();
-        if (clean.includes('>')) {
-          clean = clean.split('>')[0].replace(/[\[\]]/g, '').trim();
-        } else if (clean.startsWith('[') && clean.endsWith(']')) {
-          clean = clean.slice(1, -1).trim();
-        }
-        return clean;
-      }))).slice(0, 8);
+             let btnText = btn;
+             let cleanSpec = btn.trim();
+             if (cleanSpec.includes('>')) {
+               const parts = cleanSpec.split('>');
+               btnText = parts[0].trim();
+             }
+             btnText = cleanButtonText(btnText);
+ 
+             dynamicButtonItems.push({
+               name: btnText,
+               page: pageName,
+               href: '#action',
+               actionType: 'Opens Lead Form / Contact',
+               isValid: true,
+               statusLabel: 'Valid Action Assigned'
+             });
+           });
+         }
+       });
+     });
+   }
+ 
+   if (dynamicButtonItems.length === 0) {
+     const ctaMatches = sanitizedDocText.match(/(Book|Contact|Get|Request|Find|Schedule|Call|Download|Claim|Buy|Order|Estimate|Enquire)\s+[A-Za-z0-9\s]{2,25}/gi);
+     if (ctaMatches && ctaMatches.length > 0) {
+       const uniqueCtas = Array.from(new Set(ctaMatches.map(c => {
+         let btnText = c.trim();
+         if (btnText.includes('>')) {
+           btnText = btnText.split('>')[0].trim();
+         }
+         return cleanButtonText(btnText);
+       }))).slice(0, 8);
       uniqueCtas.forEach(cta => {
         dynamicButtonItems.push({
           name: cta,

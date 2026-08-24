@@ -377,12 +377,13 @@ export const ChecklistSections: React.FC<ChecklistSectionsProps> = ({ report }) 
                   btnName = btnName.slice(12, -2).trim();
                 }
                 
-                btnName = btnName.replace(/^(hero image button:|button:)/i, '').trim();
+                btnName = btnName.replace(/^["']|["']$/g, '').trim();
+                btnName = btnName.replace(/^(hero image button:|button:|cta button:)/i, '').trim();
                 if (btnName.includes('>')) {
-                  btnName = btnName.split('>')[0].replace(/[\[\]]/g, '').trim();
-                } else if (btnName.startsWith('[') && btnName.endsWith(']')) {
-                  btnName = btnName.slice(1, -1).trim();
+                  btnName = btnName.split('>')[0].trim();
                 }
+                btnName = btnName.replace(/^["']|["']$/g, '').trim();
+                btnName = btnName.replace(/^\[|\]$/g, '').trim();
 
                 const pageNorm = (docBtn.page || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '').trim();
                 const nameNorm = btnName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
