@@ -44,6 +44,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   const [percentComplete, setPercentComplete] = React.useState(0);
   const [consoleLogs, setConsoleLogs] = React.useState<string[]>([]);
   const consoleRef = React.useRef<HTMLDivElement>(null);
+  const activeIntervalsRef = React.useRef<boolean>(false);
 
   React.useEffect(() => {
     if (consoleRef.current) {
@@ -55,8 +56,12 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     if (!isAnalyzing) {
       setPercentComplete(0);
       setConsoleLogs([]);
+      activeIntervalsRef.current = false;
       return;
     }
+
+    if (activeIntervalsRef.current) return;
+    activeIntervalsRef.current = true;
 
     // Smooth percentage counter up to 98%
     const pctInterval = setInterval(() => {
@@ -114,8 +119,9 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     return () => {
       clearInterval(pctInterval);
       clearInterval(logInterval);
+      activeIntervalsRef.current = false;
     };
-  }, [isAnalyzing]);
+  }, [isAnalyzing, websiteUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
